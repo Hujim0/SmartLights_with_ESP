@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP LED</title>
+</head>
+
+<body>
+    <h1>Change how your strip looks!</h1>
+    <p>
+        <label>Light switch</label>
+        <input type="checkbox" id="light_switch_checkbox" />
+    </p>
+    <p>
+        <label>Brightness</label>
+        <input type="range" id="brightness_slider" min="5" max="255" />
+    </p>
+    <p>
+        <label> Light mode</label>
+        <select id="mode_switch_select">
+            <option>Static mode</option>
+            <option>Rainbow mode</option>
+            <!-- <option>2 - rainbow</option> -->
+        </select>
+    </p>
+    <p id="speed_input_holder" hidden>
+        <label>Speed</label>
+        <input type="number" id="speed_input">
+    </p>
+    <p id="count_input_holder" hidden>
+        <label>count</label>
+        <input type="number" id="count_input">
+    </p>
+    <p id="intensity_input_holder" hidden>
+        <label>Intensity</label>
+        <input type="number" id="intensity_input">
+    </p>
+    <p id="length_input_holder" hidden>
+        <label>Length</label>
+        <input type="number" id="length_input">
+    </p>
+    <p id="reversed_input_holder" hidden>
+        <label>Reversed</label>
+        <input type="checkbox" id="reversed_input">
+    </p>
+    <p id="color_input_holder">
+        <label>
+            Color
+        </label>
+        <input type="color" id="color_picker" />
+    </p>
+    <p id="update_mode_button_holder">
+        <button id="update_mode_button">Update mode</button>
+    </p>
+    <p></p>
+    <p></p>
+    <hr />
+    <p><label>Made by <a href="https://github.com/Hujim0">hujimo</a></label></p>
+    <p><label>Licence - MIT</label></p>
+</body>
+
+<script type="text/javascript">
+
+    var gateway = `ws://${window.location.host}/ws`;
+    var websocket;
+
+    window.addEventListener('load', BeginWebSocket);
+
+    function BeginWebSocket(event) {
+        console.log('Trying to open a WebSocket connection...');
+        websocket = new WebSocket(gateway);
+        websocket.onopen = onOpen;
+        websocket.onclose = onClose;
+        websocket.onmessage = onMessage;
+    }
+
+    function onOpen(event) {
+        console.log('Connection opened');
+        websocket.send('hi from server');
+    }
+
+    function onClose(event) {
+        console.log('Connection closed');
+        setTimeout(BeginWebSocket, 2000);
+
+        function onMessage(event) {
+            console.log(event.data);
+        }
+
+    }
+
+    //---------------------------------------------------------------------------
+
+    var checkbox = document.getElementById("light_switch_checkbox");
+
+    checkbox.checked = (localStorage.getItem("switch_light_state") == "true") ? true : false;
+    checkbox.addEventListener("change", (event) => {
+        localStorage.setItem("switch_light_state", event.currentTarget.checked);
+
+        //json formatting
+        websocket.send("{\"event\":\"light_switch\"," +
+            "\"value\":" + event.currentTarget.checked +
+            "}");
+    });
+
+    //---------------------------------------------------------------------------
+
+    class Mode {
+        hasColor = false;
+        hasSpeed = false;
+        hasCount = false;
+        hasLength = false;
+        hasIntensity = false;
+        hasReversed = false;
+
+        Speed = 0;
+        Count = 0;
+        Length = 0;
+        Intensity = 0;
+        Reversed = false;
+
+        constructor(id) {
+            switch (id) {
+                case 0: {
+                    this.hasColor = true;
+                    this.hasSpeed = false;
+                    this.hasCount = false;
+                    this.HasLength = false;
+                    this.hasIntensity = false;
+                    this.hasReversed = false;
+                    break;
+                }
+                case 1: {
+                    this.hasColor = false;
+                    this.hasSpeed = true;
+                    this.hasCount = true;
+                    this.HasLength = false;
+                    this.hasIntensity = false;
+                    this.hasReversed = true;
+
+                    this.Speed = 10;
+                    this.Count = 1;
+                    this.Reversed = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    var current_mode = new Mode(parseInt(localStorage.getItem("mode_switch_value")));
+
+    var color_picker = document.getElementById("color_picker");
+    var speed_input = document.getElementById("speed_input");
+    var count_input = document.getElementById("count_input");
+    var intensity_input = document.getElementById("intensity_input");
+    var length_input = document.getElementById("length_input");
+    var reversed_input = document.getElementById("reversed_input");
+    var update_mode_button = document.getElementById("update_mode_button");
+
+    var select = document.getElementById("mode_switch_select");
+
+    UpdateModeElements(current_mode);
+
+    select.selectedIndex = parseInt(localStorage.getItem("mode_switch_value"));
+    select.addEventListener("change", (event) => {
+        ChangeMode(event.currentTarget.selectedIndex);
+    });
+
+    update_mode_button.addEventListener("click", (event) => {
+
+        var args = GetArgs(current_mode);
+
+        websocket.send("{\"event\":\"mode_switch\"," +
+            "\"value\":" + localStorage.getItem("mode_switch_value") + args + "}");
+    });
+    //--end
+
+    //send update func
+    function ChangeMode(id) {
+        if (localStorage.getItem("mode_switch_value") == toString(id)) {
+            return;
+        }
+        localStorage.setItem("mode_switch_value", id);
+
+        current_mode = new Mode(id);
+
+        UpdateModeElements(current_mode);
+
+        var args = GetArgs(current_mode);
+
+        websocket.send("{\"event\":\"mode_switch\"," +
+            "\"value\":" + id + args + "}");
+    }
+
+    function GetArgs(_mode) {
+        var args = "";
+
+        if (_mode.hasColor) {
+            args += (args == "") ? ",\"args\":[" : ","; //checks if its the first arguement, if not, continue with a comma
+
+            args += localStorage.getItem("color_r") + "," +
+                localStorage.getItem("color_g") + "," +
+                localStorage.getItem("color_b");
+        }
+
+        if (_mode.hasSpeed) {
+            args += (args == "") ? ",\"args\":[" : ",";
+            args += speed_input.value;
+        }
+
+        if (_mode.hasCount) {
+            args += (args == "") ? ",\"args\":[" : ",";
+            args += count_input.value;
+        }
+
+        if (_mode.hasIntensity) {
+            args += (args == "") ? ",\"args\":[" : ",";
+            args += intensity_input.value;
+        }
+
+        if (_mode.hasLength) {
+            args += (args == "") ? ",\"args\":[" : ",";
+            args += intensity_input.value;
+        }
+
+        if (_mode.hasReversed) {
+            args += (args == "") ? ",\"args\":[" : ",";
+            args += reversed_input.checked;
+        }
+
+        if (_mode.hasCount || _mode.hasIntensity || _mode.hasLength || _mode.hasReversed || _mode.hasSpeed) {
+            update_mode_button.hidden = false;
+        }
+        else {
+            update_mode_button.hidden = true;
+        }
+
+        args += "]";
+
+        return args;
+    }
+
+    function UpdateModeElements(_mode) {
+        color_picker.parentElement.hidden = !_mode.hasColor;
+        speed_input.parentElement.hidden = !_mode.hasSpeed;
+        count_input.parentElement.hidden = !_mode.hasCount;
+        intensity_input.parentElement.hidden = !_mode.hasIntensity;
+        length_input.parentElement.hidden = !_mode.hasLength;
+        reversed_input.parentElement.hidden = !_mode.hasReversed;
+
+        speed_input.value = _mode.Speed;
+        count_input.value = _mode.Count;
+        intensity_input.value = _mode.Intensity;
+        length_input.value = _mode.Length;
+        reversed_input.checked = _mode.Reversed;
+    }
+    //---------------------------------------------------------------------------
+
+
+
+    color_picker.value = localStorage.getItem("color");
+    color_picker.addEventListener("change", (event) => {
+        localStorage.setItem("color", event.target.value);
+
+        var color = color_picker.value;
+
+        const r = parseInt(color.substr(1, 2), 16);
+        localStorage.setItem("color_r", r);
+        const g = parseInt(color.substr(3, 2), 16);
+        localStorage.setItem("color_g", g);
+        const b = parseInt(color.substr(5, 2), 16);
+        localStorage.setItem("color_b", b);
+
+        ChangeMode(parseInt(localStorage.getItem("mode_switch_value")));
+    });
+
+    //---------------------------------------------------------------------------
+
+    slider = document.getElementById("brightness_slider");
+
+    slider.value = localStorage.getItem("brightness");
+
+    slider.addEventListener("change", (event) => {
+        localStorage.setItem("brightness", event.target.value);
+
+        //var index_url = "http://" + window.location.host;
+        //window.location.href = index_url + "/brightness?b=" + event.target.value;
+
+        websocket.send("{\"event\":\"brightness\"," +
+            "\"value\":" + event.target.value +
+            "}");
+    });
+
+</script>
+
+</html>

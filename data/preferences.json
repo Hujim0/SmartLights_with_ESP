@@ -1,0 +1,17 @@
+{
+    "light_switch": true,
+    "brightness": 50,
+    "mode": 0,
+    "args": [
+        [
+            255,
+            255,
+            255
+        ],
+        [
+            40,
+            0,
+            false
+        ]
+    ]
+}
