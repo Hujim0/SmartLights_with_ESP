@@ -5,3 +5,4 @@
 .vscode/ipch
 .data/wifi_settings.txt
 data/wifi_settings.txt
+*.txt
