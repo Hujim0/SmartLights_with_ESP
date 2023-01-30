@@ -16,7 +16,7 @@ private:
 public:
     void update(CRGB *);
     RainbowMode();
-    RainbowMode(JsonArray &);
+    RainbowMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
     ~RainbowMode();
 };
 

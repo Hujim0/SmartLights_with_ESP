@@ -33,11 +33,13 @@ RainbowMode::RainbowMode()
     }
 }
 
-RainbowMode::RainbowMode(JsonArray &args)
+RainbowMode::RainbowMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 {
-    speed = args[0].as<float>();
-    count = args[1].as<int>();
-    reversed = args[2].as<bool>();
+    speed = args["speed"].as<float>();
+    count = args["count"].as<int>();
+    reversed = args["reversed"].as<bool>();
+
+    serializeJson(args, Serial);
 
     hueConst = (255.0 * count) / (NUMPIXELS);
     if (!reversed)

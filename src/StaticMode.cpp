@@ -14,11 +14,13 @@ StaticMode::StaticMode()
     color = CRGB::White;
 }
 
-StaticMode::StaticMode(JsonArray &args)
+StaticMode::StaticMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 {
-    color = CRGB(args[0].as<int>(),
-                 args[1].as<int>(),
-                 args[2].as<int>());
+    color = CRGB(args["r"].as<int>(),
+                 args["g"].as<int>(),
+                 args["b"].as<int>());
+
+    serializeJson(args, Serial);
 }
 StaticMode::~StaticMode()
 {

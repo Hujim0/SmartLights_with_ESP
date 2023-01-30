@@ -15,7 +15,7 @@ public:
     void setup(CRGB *);
     void update(CRGB *);
     WaveMode();
-    WaveMode(JsonArray &);
+    WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
     ~WaveMode();
 };
 

@@ -4,12 +4,13 @@
 #include <FastLED.h>
 #include <main.h>
 #include <ArduinoJson.h>
-using std::array;
+
+#define STATIC_DOCUMENT_MEMORY_SIZE 512
 
 class Mode
 {
 public:
-    // pure virtual methods
+    // pure virtual method
     virtual void update(CRGB *) = 0;
     virtual ~Mode() {}
 };

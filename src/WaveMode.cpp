@@ -8,7 +8,7 @@ void WaveMode::update(CRGB *)
     // }
 }
 
-WaveMode::WaveMode(JsonArray &doc)
+WaveMode::WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 {
     // speed = args[0].toFloat();
     // length = args[1].toFloat();

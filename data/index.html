@@ -85,11 +85,9 @@
     function onClose(event) {
         console.log('Connection closed');
         setTimeout(BeginWebSocket, 2000);
-
-        function onMessage(event) {
-            console.log(event.data);
-        }
-
+    }
+    function onMessage(event) {
+        console.log(event.data);
     }
 
     //---------------------------------------------------------------------------
@@ -199,36 +197,36 @@
         var args = "";
 
         if (_mode.hasColor) {
-            args += (args == "") ? ",\"args\":[" : ","; //checks if its the first arguement, if not, continue with a comma
+            args += (args == "") ? ",\"args\":{" : ","; //checks if its the first arguement, if not, continue with a comma
 
-            args += localStorage.getItem("color_r") + "," +
-                localStorage.getItem("color_g") + "," +
-                localStorage.getItem("color_b");
+            args += "\"r\":" + localStorage.getItem("color_r") + "," +
+                "\"g\":" + localStorage.getItem("color_g") + "," +
+                "\"b\":" + localStorage.getItem("color_b");
         }
 
         if (_mode.hasSpeed) {
-            args += (args == "") ? ",\"args\":[" : ",";
-            args += speed_input.value;
+            args += (args == "") ? ",\"args\":{" : ",";
+            args += "\"speed\":" + speed_input.value;
         }
 
         if (_mode.hasCount) {
-            args += (args == "") ? ",\"args\":[" : ",";
-            args += count_input.value;
+            args += (args == "") ? ",\"args\":{" : ",";
+            args += "\"count\":" + count_input.value;
         }
 
         if (_mode.hasIntensity) {
-            args += (args == "") ? ",\"args\":[" : ",";
-            args += intensity_input.value;
+            args += (args == "") ? ",\"args\":{" : ",";
+            args += "\"intensity\":" + intensity_input.value;
         }
 
         if (_mode.hasLength) {
-            args += (args == "") ? ",\"args\":[" : ",";
-            args += intensity_input.value;
+            args += (args == "") ? ",\"args\":{" : ",";
+            args += "\"length\":" + intensity_input.value;
         }
 
         if (_mode.hasReversed) {
-            args += (args == "") ? ",\"args\":[" : ",";
-            args += reversed_input.checked;
+            args += (args == "") ? ",\"args\":{" : ",";
+            args += "\"reversed\":" + reversed_input.checked;
         }
 
         if (_mode.hasCount || _mode.hasIntensity || _mode.hasLength || _mode.hasReversed || _mode.hasSpeed) {
@@ -238,7 +236,7 @@
             update_mode_button.hidden = true;
         }
 
-        args += "]";
+        args += "}";
 
         return args;
     }
@@ -285,9 +283,6 @@
 
     slider.addEventListener("change", (event) => {
         localStorage.setItem("brightness", event.target.value);
-
-        //var index_url = "http://" + window.location.host;
-        //window.location.href = index_url + "/brightness?b=" + event.target.value;
 
         websocket.send("{\"event\":\"brightness\"," +
             "\"value\":" + event.target.value +

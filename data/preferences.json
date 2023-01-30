@@ -3,15 +3,15 @@
     "brightness": 50,
     "mode": 0,
     "args": [
-        [
-            255,
-            255,
-            255
-        ],
-        [
-            40,
-            0,
-            false
-        ]
+        {
+            "r": 255,
+            "g": 255,
+            "b": 255
+        },
+        {
+            "speed": 40,
+            "count": 0,
+            "reversed": false
+        }
     ]
 }
