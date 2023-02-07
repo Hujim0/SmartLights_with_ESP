@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define NUMPIXELS 600
+#define NUMPIXELS 300
 
 #define STRIP WS2812B
 #define STRIP_PIN D4

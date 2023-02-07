@@ -16,6 +16,7 @@ void ModeHandler::LightSwitch(bool state)
     if (!state)
     {
         FastLED.showColor(CRGB::Black);
+        return;
     }
 }
 

@@ -1,5 +1,4 @@
 #include <StaticMode.h>
-using std::strtol;
 
 void StaticMode::update(CRGB *leds)
 {
@@ -20,7 +19,7 @@ StaticMode::StaticMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
                  args["g"].as<int>(),
                  args["b"].as<int>());
 
-    serializeJson(args, Serial);
+    Serial.println(color.r);
 }
 StaticMode::~StaticMode()
 {

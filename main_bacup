@@ -10,7 +10,7 @@
 
 #pragma endregion
 
-// #define DEBUG_HEAP
+#define DEBUG_HEAP
 #define DEBUG_PREFERENCES
 #define DEBUG_WIFI
 
@@ -62,13 +62,9 @@ void setup()
 #ifdef DEBUG_PREFERENCES
     Serial.print("Loaded settings: ");
     Serial.println(preferences_json);
-#endif
-
-    ledSetup();
-
-    ChangeModeFromPreferences();
 
     Serial.println("------------------------------------------------------------------");
+#endif
 
     // network setup
     String wifi_data[2];
@@ -87,6 +83,10 @@ void setup()
 
     network.OnNewClient(OnClientConnected);
     network.OnNewMessage(OnWebSocketMessage);
+
+    ledSetup();
+
+    ChangeModeFromPreferences();
 }
 
 unsigned long timer = millis();
@@ -109,8 +109,8 @@ void loop()
     if (modeHandler.led_state)
     {
         modeHandler.update(leds);
-        FastLED.show();
     }
+    FastLED.show();
 }
 
 void OnClientConnected(int id)
