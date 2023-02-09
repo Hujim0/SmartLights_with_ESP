@@ -118,17 +118,17 @@
     //---------------------------------------------------------------------------
 
     var color_picker = document.getElementById("color_picker");
-    color_picker.addEventListener("change", (event) => { SendCurrentArgs() });
+    //color picker sends args only after updating the mode 
     var speed_input = document.getElementById("speed_input");
-    speed_input.addEventListener("change", (event) => { SendCurrentArgs() });
+    speed_input.addEventListener("change", SendCurrentArgs);
     var count_input = document.getElementById("count_input");
-    count_input.addEventListener("change", (event) => { SendCurrentArgs() });
+    count_input.addEventListener("change", SendCurrentArgs);
     var intensity_input = document.getElementById("intensity_input");
-    intensity_input.addEventListener("change", (event) => { SendCurrentArgs() });
+    intensity_input.addEventListener("change", SendCurrentArgs);
     var length_input = document.getElementById("length_input");
-    length_input.addEventListener("change", (event) => { SendCurrentArgs() });
+    length_input.addEventListener("change", SendCurrentArgs);
     var reversed_input = document.getElementById("reversed_input");
-    reversed_input.addEventListener("change", (event) => { SendCurrentArgs() });
+    reversed_input.addEventListener("change", SendCurrentArgs);
 
     var select = document.getElementById("mode_switch_select");
 
@@ -140,9 +140,6 @@
     select.addEventListener("change", (event) => {
         ChangeMode(event.currentTarget.selectedIndex);
     });
-
-    update_mode_button.addEventListener("click", (event) => { SendCurrentArgs() });
-    //--end
 
     //send update func
     function ChangeMode(id) {
@@ -272,14 +269,9 @@
         if (hasReversed) {
             reversed_input.checked = modes.args[current_mode].reversed;
         }
-
-        var showUpdateButton = hasCount || hasIntensity || hasLength || hasReversed || hasSpeed
-        update_mode_button.hidden = !showUpdateButton;
     }
     //---------------------------------------------------------------------------
 
-
-    color_picker.value = localStorage.getItem("color");
     color_picker.addEventListener("change", (event) => {
 
         var color = color_picker.value;
@@ -292,6 +284,8 @@
         modes.args[current_mode].g = g;
         const b = parseInt(color.substr(5, 2), 16);
         modes.args[current_mode].b = b;
+
+        SendCurrentArgs();
     });
 
     function decToHex(c) {

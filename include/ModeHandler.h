@@ -7,7 +7,6 @@ class ModeHandler
 {
 private:
     Mode *current_mode;
-    bool ready = false;
 
 public:
     bool led_state = true;

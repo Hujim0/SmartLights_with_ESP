@@ -129,6 +129,12 @@ void ModeHandler::ChangeModeFromJson(String data, DynamicJsonDocument &preferenc
 
         StaticJsonDocument<512> args = doc["args"];
 
+        if (args.size() == 0)
+        {
+            args.garbageCollect();
+            return;
+        }
+
         ChangeMode(id, args);
         preferences["mode"] = id;
         preferences["args"][id] = args;
