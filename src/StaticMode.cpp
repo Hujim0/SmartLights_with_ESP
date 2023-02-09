@@ -18,8 +18,6 @@ StaticMode::StaticMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
     color = CRGB(args["r"].as<int>(),
                  args["g"].as<int>(),
                  args["b"].as<int>());
-
-    Serial.println(color.r);
 }
 StaticMode::~StaticMode()
 {

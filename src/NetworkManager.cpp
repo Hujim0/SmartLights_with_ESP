@@ -58,7 +58,6 @@ void NetworkManager::Begin(const char *ssid, const char *password)
     }
 
     Serial.println("success");
-
     // server setup
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(

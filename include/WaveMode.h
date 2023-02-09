@@ -6,10 +6,14 @@
 class WaveMode : public Mode
 {
 private:
+    CRGB color;
+
     float offset;
 
     float speed;
     float length;
+    float intensity;
+    bool reversed;
 
 public:
     void setup(CRGB *);

@@ -42,6 +42,7 @@ void ledSetup()
 
     FastLED.clearData();
     FastLED.clear();
+    FastLED.show();
 }
 
 void setup()
@@ -64,10 +65,6 @@ void setup()
     Serial.println(preferences_json);
 #endif
 
-    ledSetup();
-
-    ChangeModeFromPreferences();
-
     Serial.println("------------------------------------------------------------------");
 
     // network setup
@@ -87,24 +84,28 @@ void setup()
 
     network.OnNewClient(OnClientConnected);
     network.OnNewMessage(OnWebSocketMessage);
+
+    ledSetup();
+
+    ChangeModeFromPreferences();
 }
 
 unsigned long timer = millis();
 
 void loop()
 {
-#ifdef DEBUG_HEAP
     if (timer + 1000 <= millis())
     {
+#ifdef DEBUG_HEAP
         Serial.print("Avalible ram: ");
         Serial.print(ESP.getFreeHeap());
         Serial.println(" bytes");
+#endif
         timer = millis();
         ESP.resetHeap();
-    }
-#endif
 
-    network.CleanUp();
+        network.CleanUp();
+    }
 
     if (modeHandler.led_state)
     {
@@ -122,10 +123,14 @@ void OnClientConnected(int id)
 
 void OnWebSocketMessage(String data)
 {
+    if (data[0] != '{')
+        return;
+
     modeHandler.ChangeModeFromJson(data, preferences);
     String json;
     serializeJsonPretty(preferences, json);
     SavePreferences(json);
+    serializeJson(preferences, Serial);
 }
 
 void ChangeModeFromPreferences()

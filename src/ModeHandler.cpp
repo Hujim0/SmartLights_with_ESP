@@ -1,6 +1,7 @@
 #include <ModeHandler.h>
 #include <StaticMode.h>
 #include <RainbowMode.h>
+#include <WaveMode.h>
 
 #define LIGHT_SWITCH "light_switch"
 #define MODE_SWITCH "mode_switch"
@@ -26,12 +27,14 @@ void ModeHandler::ChangeMode(int id, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_S
     {
     case 0:
         current_mode = new StaticMode(args);
-        ready = true;
         return;
 
     case 1:
         current_mode = new RainbowMode(args);
-        ready = true;
+        return;
+
+    case 2:
+        current_mode = new WaveMode(args);
         return;
 
     default:
@@ -45,12 +48,14 @@ void ModeHandler::ChangeMode(int id)
     {
     case 0:
         current_mode = new StaticMode();
-        ready = true;
         return;
     case 1:
         current_mode = new RainbowMode();
-        ready = true;
         return;
+    case 2:
+        current_mode = new WaveMode();
+        return;
+
     default:
         ChangeMode(0);
         break;
@@ -64,7 +69,6 @@ void ModeHandler::update(CRGB *leds)
 
 void ModeHandler::ChangeModeFromJson(String data)
 {
-
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, data.c_str());
 
