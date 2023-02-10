@@ -2,6 +2,7 @@
 #include <StaticMode.h>
 #include <RainbowMode.h>
 #include <WaveMode.h>
+#include <SkyMode.h>
 
 #define LIGHT_SWITCH "light_switch"
 #define MODE_SWITCH "mode_switch"
@@ -23,6 +24,8 @@ void ModeHandler::LightSwitch(bool state)
 
 void ModeHandler::ChangeMode(int id, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 {
+    FastLED.clearData();
+
     switch (id)
     {
     case 0:
@@ -36,6 +39,9 @@ void ModeHandler::ChangeMode(int id, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_S
     case 2:
         current_mode = new WaveMode(args);
         return;
+    case 3:
+        current_mode = new SkyMode(args);
+        return;
 
     default:
         ChangeMode(0);
@@ -44,6 +50,8 @@ void ModeHandler::ChangeMode(int id, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_S
 }
 void ModeHandler::ChangeMode(int id)
 {
+    FastLED.clearData();
+
     switch (id)
     {
     case 0:
@@ -54,6 +62,9 @@ void ModeHandler::ChangeMode(int id)
         return;
     case 2:
         current_mode = new WaveMode();
+        return;
+    case 3:
+        current_mode = new SkyMode();
         return;
 
     default:
@@ -83,7 +94,7 @@ void ModeHandler::ChangeModeFromJson(String data)
     {
         int id = doc["value"].as<int>();
 
-        if (!doc.containsKey("args"))
+        if (doc["args"] == NULL || doc["args"].size() == 0)
         {
             ChangeMode(id);
             return;
@@ -105,10 +116,10 @@ void ModeHandler::ChangeModeFromJson(String data)
 
 void ModeHandler::ChangeModeFromJson(String data, DynamicJsonDocument &preferences)
 {
-    DynamicJsonDocument doc(1024);
+    StaticJsonDocument<512> doc;
     deserializeJson(doc, data.c_str());
 
-    String event_type = doc["event"];
+    String event_type = doc["event"].as<String>();
 
     if (event_type == LIGHT_SWITCH)
     {
@@ -120,20 +131,14 @@ void ModeHandler::ChangeModeFromJson(String data, DynamicJsonDocument &preferenc
     {
         int id = doc["value"].as<int>();
 
-        if (!doc.containsKey("args"))
+        if (doc["args"] == NULL || doc["args"].size() == 0)
         {
             ChangeMode(id);
             preferences["mode"] = id;
             return;
         }
 
-        StaticJsonDocument<512> args = doc["args"];
-
-        if (args.size() == 0)
-        {
-            args.garbageCollect();
-            return;
-        }
+        StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"];
 
         ChangeMode(id, args);
         preferences["mode"] = id;

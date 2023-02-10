@@ -94,7 +94,7 @@ unsigned long timer = millis();
 
 void loop()
 {
-    if (timer + 1000 <= millis())
+    if (timer + 5000 <= millis())
     {
 #ifdef DEBUG_HEAP
         Serial.print("Avalible ram: ");
@@ -102,7 +102,6 @@ void loop()
         Serial.println(" bytes");
 #endif
         timer = millis();
-        ESP.resetHeap();
 
         network.CleanUp();
     }
@@ -126,11 +125,12 @@ void OnWebSocketMessage(String data)
     if (data[0] != '{')
         return;
 
+    Serial.print(data);
+
     modeHandler.ChangeModeFromJson(data, preferences);
     String json;
     serializeJsonPretty(preferences, json);
     SavePreferences(json);
-    serializeJson(preferences, Serial);
 }
 
 void ChangeModeFromPreferences()

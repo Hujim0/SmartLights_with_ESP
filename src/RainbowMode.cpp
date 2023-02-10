@@ -47,9 +47,4 @@ RainbowMode::RainbowMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 }
 RainbowMode::~RainbowMode()
 {
-    hue = 0;
-    speed = 0;
-    count = 0;
-    reversed = false;
-    Serial.print("freeed");
 }

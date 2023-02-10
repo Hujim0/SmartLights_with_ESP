@@ -21,6 +21,12 @@
             "length": 10,
             "intensity": 90,
             "reversed": false
+        },
+        {
+            "edit": true,
+            "start": 5,
+            "end": 20,
+            "length": 300
         }
     ]
 }

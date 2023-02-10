@@ -24,32 +24,43 @@
             <option>Static mode</option>
             <option>Rainbow mode</option>
             <option>Wave mode</option>
+            <option>Sky mode</option>
         </select>
     </p>
-    <p id="speed_input_holder" hidden>
+    <p hidden>
+        <label>Edit</label>
+        <input type="checkbox" id="edit_input">
+    </p>
+    <p hidden>
         <label>Speed</label>
         <input type="range" id="speed_input" min="0" max="50">
     </p>
-    <p id="count_input_holder" hidden>
+    <p hidden>
         <label>count</label>
         <input type="number" id="count_input">
     </p>
-    <p id="intensity_input_holder" hidden>
+    <p hidden>
         <label>Intensity</label>
         <input type="range" id="intensity_input" min="0" max="100">
     </p>
-    <p id="length_input_holder" hidden>
+    <p hidden>
         <label>Length</label>
         <input type="number" id="length_input">
     </p>
-    <p id="reversed_input_holder" hidden>
+    <p hidden>
+        <label>Start</label>
+        <input type="number" id="start_input">
+    </p>
+    <p hidden>
+        <label>End</label>
+        <input type="number" id="end_input">
+    </p>
+    <p hidden>
         <label>Reversed</label>
         <input type="checkbox" id="reversed_input">
     </p>
-    <p id="color_input_holder">
-        <label>
-            Color
-        </label>
+    <p hidden>
+        <label>Color</label>
         <input type="color" id="color_picker" />
     </p>
     <p></p>
@@ -76,17 +87,19 @@
 
     function onOpen(event) {
         console.log('Connection opened');
-        websocket.send('hi from server');
     }
 
     function onClose(event) {
         console.log('Connection closed');
+        modes = null;
+        window.dispatchEvent(OnLostConnection);
         setTimeout(BeginWebSocket, 2000);
     }
 
     var modes = null;
 
-    const OnGetPreferences = new Event("onGetPreferences", { bubbles: true });
+    const OnGetPreferences = new Event("onGetPreferences");
+    const OnLostConnection = new Event("onLostConnection");
 
     function onMessage(event) {
         console.log(event.data);
@@ -101,34 +114,83 @@
     var checkbox = document.getElementById("light_switch_checkbox");
 
     window.addEventListener("onGetPreferences", (event) => {
-
         checkbox.checked = modes.light_switch;
+        checkbox.addEventListener("click", OnLightSwitchChanged);
+    });
+    window.addEventListener("onLostConnection", (event) => {
+        checkbox.removeEventListener("click", OnLightSwitchChanged);
     });
 
-    checkbox.addEventListener("change", (event) => {
-
-        modes.light_switch = event.currentTarget.checked;
+    function OnLightSwitchChanged() {
+        modes.light_switch = checkbox.checked;
 
         //json formatting
         websocket.send("{\"event\":\"light_switch\"," +
-            "\"value\":" + event.currentTarget.checked +
+            "\"value\":" + checkbox.checked +
             "}");
-    });
+    }
 
     //---------------------------------------------------------------------------
 
     var color_picker = document.getElementById("color_picker");
-    //color picker sends args only after updating the mode 
+
     var speed_input = document.getElementById("speed_input");
-    speed_input.addEventListener("change", SendCurrentArgs);
     var count_input = document.getElementById("count_input");
-    count_input.addEventListener("change", SendCurrentArgs);
     var intensity_input = document.getElementById("intensity_input");
-    intensity_input.addEventListener("change", SendCurrentArgs);
     var length_input = document.getElementById("length_input");
-    length_input.addEventListener("change", SendCurrentArgs);
     var reversed_input = document.getElementById("reversed_input");
-    reversed_input.addEventListener("change", SendCurrentArgs);
+    var start_input = document.getElementById("start_input");
+    var end_input = document.getElementById("end_input");
+
+    inputs_dictionary = [
+        {
+            "elem": edit_input,
+            "property": "edit"
+        },
+        {
+            "elem": speed_input,
+            "property": "speed"
+        },
+        {
+            "elem": intensity_input,
+            "property": "intensity"
+        },
+        {
+            "elem": length_input,
+            "property": "length"
+        },
+        {
+            "elem": reversed_input,
+            "property": "reversed"
+        },
+        {
+            "elem": count_input,
+            "property": "count"
+        },
+        {
+            "elem": start_input,
+            "property": "start"
+        },
+        {
+            "elem": end_input,
+            "property": "end"
+        }
+    ]
+
+    window.addEventListener("onGetPreferences", (event) => {
+        //color picker sends args only after updating the mode 
+        for (var i = 0; i < inputs_dictionary.length; i++) {
+            inputs_dictionary[i].elem.addEventListener("change", SendCurrentArgs);
+        }
+    });
+
+    window.addEventListener("onLostConnection", (event) => {
+        //color picker sends args only after updating the mode 
+        for (var i = 0; i < inputs_dictionary.length; i++) {
+            inputs_dictionary[i].elem.removeEventListener("change", SendCurrentArgs);
+        }
+    });
+
 
     var select = document.getElementById("mode_switch_select");
 
@@ -136,9 +198,16 @@
 
         select.selectedIndex = modes.mode;
         UpdateModeElements();
+
+        select.addEventListener("change", (event) => {
+            ChangeMode(event.currentTarget.selectedIndex);
+        });
     });
-    select.addEventListener("change", (event) => {
-        ChangeMode(event.currentTarget.selectedIndex);
+
+    window.addEventListener("onLostConnection", (event) => (event) => {
+        select.removeEventListener("change", (event) => {
+            ChangeMode(event.currentTarget.selectedIndex);
+        });
     });
 
     //send update func
@@ -163,57 +232,26 @@
     function GetArgs() {
         var current_mode = modes.mode;
 
-        var args = "";
+        var args = ",\"args\":{";
 
-        //-----color------
         var hasColor = modes.args[current_mode].r != null;
         if (hasColor) {
-            args += (args == "") ? ",\"args\":{" : ","; //checks if its the first arguement, if not, continue with a comma
-
             args += "\"r\":" + modes.args[current_mode].r + "," +
                 "\"g\":" + modes.args[current_mode].g + "," +
-                "\"b\":" + modes.args[current_mode].b;
-        }
-        //------speed-------
-        var hasSpeed = modes.args[current_mode].speed != null;
-        if (hasSpeed) {
-            modes.args[current_mode].speed = speed_input.value;
-            args += (args == "") ? ",\"args\":{" : ",";
-            args += "\"speed\":" + speed_input.value;
+                "\"b\":" + modes.args[current_mode].b + ",";
         }
 
-        //------count-------
-        var hasCount = modes.args[current_mode].count != null;
-        if (hasCount) {
-            modes.args[current_mode].count = count_input.value;
-
-            args += (args == "") ? ",\"args\":{" : ",";
-            args += "\"count\":" + count_input.value;
-        }
-        //----intensity-----
-        var hasIntensity = modes.args[current_mode].intensity != null;
-        if (hasIntensity) {
-            modes.args[current_mode].intensity = intensity_input.value;
-
-            args += (args == "") ? ",\"args\":{" : ",";
-            args += "\"intensity\":" + intensity_input.value;
-        }
-        //------length------
-        var hasLength = modes.args[current_mode].length != null;
-        if (hasLength) {
-            modes.args[current_mode].length = length_input.value;
-
-            args += (args == "") ? ",\"args\":{" : ",";
-            args += "\"length\":" + length_input.value;
+        for (var i = 0; i < inputs_dictionary.length; i++) {
+            args += checkHasArg(inputs_dictionary[i].elem,
+                inputs_dictionary[i].property);
         }
 
-        //-----reversed------
-        var hasReversed = modes.args[current_mode].reversed != null;
-        if (hasReversed) {
-            modes.args[current_mode].reversed = reversed_input.checked;
+        if (args == ",\"args\":{") { //none of the args are found
+            return "";
+        }
 
-            args += (args == "") ? ",\"args\":{" : ",";
-            args += "\"reversed\":" + reversed_input.checked;
+        if (args.endsWith(",")) {
+            args = args.substring(0, args.length - 1);
         }
 
         args += "}";
@@ -223,9 +261,24 @@
         return args;
     }
 
+    function checkHasArg(elem, property) {
+        var hasProperty = modes.args[modes.mode][property] != null;
+        if (!hasProperty) {
+            return "";
+        }
+
+        if (property == "reversed" || property == "edit") {
+            modes.args[modes.mode][property] = elem.checked;
+            return "\"" + property + "\":" + elem.checked + ",";
+        }
+
+        modes.args[modes.mode][property] = elem.value;
+
+        return "\"" + property + "\":" + elem.value + ",";
+    }
+
     function UpdateModeElements() {
         var current_mode = modes.mode;
-
         //-----color-------
         var hasColor = modes.args[current_mode].r != null;
 
@@ -237,47 +290,38 @@
 
             color_picker.value = rgbToHex(r, g, b);
         }
-        //------speed-------
-        var hasSpeed = modes.args[current_mode].speed != null;
-        speed_input.parentElement.hidden = !hasSpeed;
-        if (hasSpeed) {
-            speed_input.value = modes.args[current_mode].speed;
-        }
-        //------count-------
-        var hasCount = modes.args[current_mode].count != null;
-        count_input.parentElement.hidden = !hasCount;
-        if (hasCount) {
 
-            count_input.value = modes.args[current_mode].count;
+        for (var i = 0; i < inputs_dictionary.length; i++) {
+            checkElement(inputs_dictionary[i].elem,
+                inputs_dictionary[i].property);
         }
-        //----intensity-----
-        var hasIntensity = modes.args[current_mode].intensity != null;
-        intensity_input.parentElement.hidden = !hasIntensity;
-        if (hasIntensity) {
-            intensity_input.value = modes.args[current_mode].intensity;
-        }
-        //------length------
-        var hasLength = modes.args[current_mode].length != null;
-        length_input.parentElement.hidden = !hasLength;
-        if (hasLength) {
-            length_input.value = modes.args[current_mode].length;
-        }
+    }
 
-        //-----reversed------
-        var hasReversed = modes.args[current_mode].reversed != null;
-        reversed_input.parentElement.hidden = !hasReversed;
-        if (hasReversed) {
-            reversed_input.checked = modes.args[current_mode].reversed;
+    function checkElement(elem, property) {
+        var hasProperty = modes.args[modes.mode][property] != null;
+        elem.parentElement.hidden = !hasProperty;
+        if (hasProperty) {
+            if (property == "reversed" || property == "edit") {
+                elem.checked = modes.args[modes.mode][property];
+                return;
+            }
+            elem.value = modes.args[modes.mode][property];
         }
     }
     //---------------------------------------------------------------------------
 
-    color_picker.addEventListener("change", (event) => {
+    window.addEventListener("onGetPreferences", (event) => {
+        color_picker.addEventListener("change", OnColorPickerUpdate);
+    });
 
+    window.addEventListener("onLostConnection", (event) => {
+        color_picker.removeEventListener("change", OnColorPickerUpdate);
+    });
+
+
+    function OnColorPickerUpdate() {
         var color = color_picker.value;
-
         var current_mode = modes.mode;
-
         const r = parseInt(color.substr(1, 2), 16);
         modes.args[current_mode].r = r;
         const g = parseInt(color.substr(3, 2), 16);
@@ -286,7 +330,7 @@
         modes.args[current_mode].b = b;
 
         SendCurrentArgs();
-    });
+    }
 
     function decToHex(c) {
         var hex = c.toString(16);
@@ -295,7 +339,6 @@
 
     function rgbToHex(r, g, b) {
         return "#" + decToHex(r) + decToHex(g) + decToHex(b);
-
     }
 
     //---------------------------------------------------------------------------
@@ -305,16 +348,23 @@
     window.addEventListener("onGetPreferences", (event) => {
 
         slider.value = modes.brightness;
+
+        slider.addEventListener("change", OnBrightnessUpdate);
     });
 
-    slider.addEventListener("change", (event) => {
-        modes.brightness = event.target.value;
+    window.addEventListener("onLostConnection", (event) => {
+        slider.removeEventListener("change", OnBrightnessUpdate);
+    });
+
+    function OnBrightnessUpdate() {
+        modes.brightness = slider.value;
 
         websocket.send("{\"event\":\"brightness\"," +
-            "\"value\":" + event.target.value +
+            "\"value\":" + slider.value +
             "}");
 
-    });
+    }
+
 
 </script>
 

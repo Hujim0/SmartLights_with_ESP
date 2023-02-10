@@ -34,7 +34,14 @@ WaveMode::WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
 
     speed = args["speed"].as<float>();
     intensity = args["intensity"].as<float>() * 0.01F;
-    length = PI / (args["length"].as<float>());
+    if (args["length"].as<float>() == 0.0F)
+    {
+        length = 0.0F;
+    }
+    else
+    {
+        length = PI / (args["length"].as<float>());
+    }
 
     reversed = args["reversed"].as<bool>();
 
@@ -48,9 +55,9 @@ WaveMode::WaveMode()
 {
     color = CRGB::White;
 
-    speed = 15;
-    intensity = 15;
-    length = 5;
+    speed = 10;
+    intensity = 90;
+    length = 10;
 
     reversed = false;
 }
