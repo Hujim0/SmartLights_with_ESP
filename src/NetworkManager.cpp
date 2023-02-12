@@ -42,18 +42,11 @@ void NetworkManager::Begin(const char *ssid, const char *password)
 
     Serial.print("[ESP] Connecting to ");
     Serial.print(ssid);
+    Serial.print("...");
 
-    while (WiFi.status() != WL_CONNECTED && millis() < ATTEMPT_DURATION)
-    {
-        Serial.print(".");
-        delay(500);
-    }
-
-    // if esp cant connect within 30 secs, reset and try again
-    if (WiFi.status() != WL_CONNECTED)
+    if (WiFi.waitForConnectResult(ATTEMPT_DURATION) != WL_CONNECTED)
     {
         ESP.restart();
-
         return;
     }
 
@@ -68,6 +61,7 @@ void NetworkManager::Begin(const char *ssid, const char *password)
     // websocket setup
     server.addHandler(&webSocket);
     webSocket.onEvent(onNewEvent);
+    webSocket.closeAll();
 
     // print server url
     Serial.print("[ESP] HTTP server started at \"http://");
@@ -76,6 +70,15 @@ void NetworkManager::Begin(const char *ssid, const char *password)
     Serial.print(HTTP_PORT);
     Serial.println("\"");
     Serial.println("------------------------------------------------------------------");
+}
+
+void NetworkManager::CheckStatus()
+{
+    wl_status_t status = WiFi.status();
+    if (status == WL_CONNECTION_LOST || status == WL_DISCONNECTED)
+    {
+        WiFi.reconnect();
+    }
 }
 
 void NetworkManager::OnNewClient(OnNewClientHandler handler)

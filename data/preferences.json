@@ -1,32 +1,5 @@
 {
     "light_switch": true,
     "brightness": 50,
-    "mode": 0,
-    "args": [
-        {
-            "r": 255,
-            "g": 255,
-            "b": 255
-        },
-        {
-            "speed": 40,
-            "count": 0,
-            "reversed": false
-        },
-        {
-            "r": 255,
-            "g": 255,
-            "b": 255,
-            "speed": 10,
-            "length": 10,
-            "intensity": 90,
-            "reversed": false
-        },
-        {
-            "edit": true,
-            "start": 5,
-            "end": 20,
-            "length": 300
-        }
-    ]
+    "mode": 0
 }

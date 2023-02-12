@@ -225,7 +225,7 @@
     function SendCurrentArgs() {
         if (modes == null) return;
 
-        websocket.send("{\"event\":\"mode_switch\"," +
+        websocket.send("{\"event\":\"mode_update\"," +
             "\"value\":" + modes.mode + GetArgs() + "}");
     }
 
@@ -234,10 +234,12 @@
 
         var args = ",\"args\":{";
 
-        var hasColor = modes.args[current_mode].r != null;
+        var hasColor = (modes.args[current_mode].r != null) &&
+            (modes.args[current_mode].g != null) &&
+            (modes.args[current_mode].b != null);
         if (hasColor) {
-            args += "\"r\":" + modes.args[current_mode].r + "," +
-                "\"g\":" + modes.args[current_mode].g + "," +
+            args += "\"r\":" + modes.args[current_mode].r + ", " +
+                "\"g\":" + modes.args[current_mode].g + ", " +
                 "\"b\":" + modes.args[current_mode].b + ",";
         }
 
@@ -269,12 +271,12 @@
 
         if (property == "reversed" || property == "edit") {
             modes.args[modes.mode][property] = elem.checked;
-            return "\"" + property + "\":" + elem.checked + ",";
+            return " \"" + property + "\":" + elem.checked + ",";
         }
 
         modes.args[modes.mode][property] = elem.value;
 
-        return "\"" + property + "\":" + elem.value + ",";
+        return " \"" + property + "\":" + elem.value + ",";
     }
 
     function UpdateModeElements() {

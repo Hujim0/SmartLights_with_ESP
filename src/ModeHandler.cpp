@@ -4,10 +4,6 @@
 #include <WaveMode.h>
 #include <SkyMode.h>
 
-#define LIGHT_SWITCH "light_switch"
-#define MODE_SWITCH "mode_switch"
-#define BRIGHTNESS "brightness"
-
 void ModeHandler::LightSwitch(bool state)
 {
     if (led_state == state)
@@ -78,83 +74,79 @@ void ModeHandler::update(CRGB *leds)
     current_mode->update(leds);
 }
 
-void ModeHandler::ChangeModeFromJson(String data)
+void ModeHandler::ChangeModeFromJson(int, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc)
 {
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, data.c_str());
+    // String event_type = doc["event"];
 
-    String event_type = doc["event"];
+    // if (event_type == LIGHT_SWITCH)
+    // {
+    //     bool light_switch = doc["value"].as<bool>();
+    //     LightSwitch(light_switch);
+    // }
+    // else if (event_type == MODE_SWITCH)
+    // {
+    //     int id = doc["value"].as<int>();
 
-    if (event_type == LIGHT_SWITCH)
-    {
-        bool light_switch = doc["value"].as<bool>();
-        LightSwitch(light_switch);
-    }
-    else if (event_type == MODE_SWITCH)
-    {
-        int id = doc["value"].as<int>();
+    //     if (doc["args"] == NULL || doc["args"].size() == 0)
+    //     {
+    //         ChangeMode(id);
+    //         return;
+    //     }
 
-        if (doc["args"] == NULL || doc["args"].size() == 0)
-        {
-            ChangeMode(id);
-            return;
-        }
+    //     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"];
 
-        StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"];
+    //     ChangeMode(id, args);
 
-        ChangeMode(id, args);
-
-        args.garbageCollect();
-    }
-    else if (event_type == BRIGHTNESS)
-    {
-        int brightness = doc["value"].as<int>();
-        FastLED.setBrightness(brightness);
-    }
-    doc.garbageCollect();
+    //     args.garbageCollect();
+    // }
+    // else if (event_type == BRIGHTNESS)
+    // {
+    //     int brightness = doc["value"].as<int>();
+    //     FastLED.setBrightness(brightness);
+    // }
+    // doc.garbageCollect();
 }
 
-void ModeHandler::ChangeModeFromJson(String data, DynamicJsonDocument &preferences)
-{
-    StaticJsonDocument<512> doc;
-    deserializeJson(doc, data.c_str());
+// void ModeHandler::ChangeModeFromJson(String data, DynamicJsonDocument &preferences)
+// {
+//     StaticJsonDocument<512> doc;
+//     deserializeJson(doc, data.c_str());
 
-    String event_type = doc["event"].as<String>();
+//     String event_type = doc["event"].as<String>();
 
-    if (event_type == LIGHT_SWITCH)
-    {
-        bool light_switch = doc["value"].as<bool>();
-        LightSwitch(light_switch);
-        preferences["light_switch"] = light_switch;
-    }
-    else if (event_type == MODE_SWITCH)
-    {
-        int id = doc["value"].as<int>();
+//     if (event_type == LIGHT_SWITCH)
+//     {
+//         bool light_switch = doc["value"].as<bool>();
+//         LightSwitch(light_switch);
+//         preferences["light_switch"] = light_switch;
+//     }
+//     else if (event_type == MODE_SWITCH)
+//     {
+//         int id = doc["value"].as<int>();
 
-        if (doc["args"] == NULL || doc["args"].size() == 0)
-        {
-            ChangeMode(id);
-            preferences["mode"] = id;
-            return;
-        }
+//         if (doc["args"] == NULL || doc["args"].size() == 0)
+//         {
+//             ChangeMode(id);
+//             preferences["mode"] = id;
+//             return;
+//         }
 
-        StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"];
+//         preferences["args"][id] = doc["args"];
+//         preferences["mode"] = id;
 
-        ChangeMode(id, args);
-        preferences["mode"] = id;
-        preferences["args"][id] = args;
+//         StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"];
 
-        args.garbageCollect();
-    }
-    else if (event_type == BRIGHTNESS)
-    {
-        int brightness = doc["value"].as<int>();
-        FastLED.setBrightness(brightness);
-        preferences["brightness"] = brightness;
-    }
+//         ChangeMode(id, args);
+//     }
+//     else if (event_type == BRIGHTNESS)
+//     {
+//         int brightness = doc["value"].as<int>();
+//         FastLED.setBrightness(brightness);
+//         preferences["brightness"] = brightness;
+//     }
 
-    doc.garbageCollect();
-}
+//     doc.garbageCollect();
+// }
 
 ModeHandler::ModeHandler()
 {

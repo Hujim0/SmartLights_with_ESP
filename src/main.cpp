@@ -11,7 +11,7 @@
 #pragma endregion
 
 // #define DEBUG_HEAP
-#define DEBUG_PREFERENCES
+// #define DEBUG_PREFERENCES
 #define DEBUG_WIFI
 
 #include <main.h>
@@ -25,14 +25,11 @@ CRGB leds[NUMPIXELS];
 
 ModeHandler modeHandler;
 NetworkManager network = NetworkManager();
-
-DynamicJsonDocument preferences(1024);
-
 #define INITIAL_DELAY 3000
 
 void OnClientConnected(int);
 void OnWebSocketMessage(String);
-void ChangeModeFromPreferences();
+void ChangeSettingsFromPreferences(String data);
 
 void ledSetup()
 {
@@ -57,8 +54,7 @@ void setup()
     // preferences load
     Serial.println("[ESP] loading preferences...");
 
-    String preferences_json = GetPreferences();
-    deserializeJson(preferences, preferences_json);
+    ChangeSettingsFromPreferences(GetPreferences());
 
 #ifdef DEBUG_PREFERENCES
     Serial.print("Loaded settings: ");
@@ -86,15 +82,13 @@ void setup()
     network.OnNewMessage(OnWebSocketMessage);
 
     ledSetup();
-
-    ChangeModeFromPreferences();
 }
 
 unsigned long timer = millis();
 
 void loop()
 {
-    if (timer + 5000 <= millis())
+    if (timer + 1000 <= millis())
     {
 #ifdef DEBUG_HEAP
         Serial.print("Avalible ram: ");
@@ -104,6 +98,8 @@ void loop()
         timer = millis();
 
         network.CleanUp();
+
+        network.CheckStatus();
     }
 
     if (modeHandler.led_state)
@@ -116,33 +112,96 @@ void loop()
 void OnClientConnected(int id)
 {
     String json;
-    serializeJson(preferences, json);
-    network.SentTextToClient(id, json.c_str());
+
+    network.SentTextToClient(id, GetPreferences().c_str());
 }
 
+bool checkPreferences(DynamicJsonDocument &pref)
+{
+    for (int i = 0; i < (int)pref["args"].size(); i++)
+    {
+        if (pref["args"][i].size() == 0 || pref["args"][i] == NULL)
+        {
+            Serial.println(i);
+            return false;
+        }
+    }
+
+    return true;
+}
 void OnWebSocketMessage(String data)
 {
+    // if (data[0] != '{')
+    //     return;
+    // serializeJson(preferences, Serial);
+    // Serial.print("--endln ");
+    // modeHandler.ChangeModeFromJson(data, preferences);
+    // bool isValid = checkPreferences(preferences);
+    // Serial.print("preferences is valid = ");
+    // Serial.println(isValid);
+    // if (!isValid)
+    // {
+    //     serializeJson(preferences, Serial);
+    //     return;
+    // }
+    // String json;
+    // serializeJsonPretty(preferences, json);
+    // SavePreferences(json);
+
     if (data[0] != '{')
         return;
 
-    Serial.print(data);
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+    deserializeJson(preferences, GetPreferences());
 
-    modeHandler.ChangeModeFromJson(data, preferences);
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc;
+    deserializeJson(doc, data.c_str());
+
+    modeHandler.ChangeModeFromJson(doc);
+
+    serializeJson(doc, Serial);
+
+    if (doc["event"] == MODE_SWITCH)
+    {
+        int mode_id = doc["value"].as<int>();
+        preferences["mode"] = mode_id;
+        preferences["args"][mode_id] = doc["args"];
+        // JsonObject obj = preferences["args"][mode_id];
+        // JsonObject args = doc["args"];
+        // // MemoryPool pool =
+        // obj.clear();
+        // for (JsonPair kv : args)
+        // {
+        //     obj[kv.key().c_str()] = args[kv.key().c_str()];
+        // }
+    }
+
+    if (doc["event"] == BRIGHTNESS)
+        preferences[BRIGHTNESS] = doc["value"].as<int>();
+    if (doc["event"] == LIGHT_SWITCH)
+        preferences[LIGHT_SWITCH] = doc["value"].as<bool>();
+
     String json;
     serializeJsonPretty(preferences, json);
     SavePreferences(json);
+    // doc.garbageCollect();
+    preferences.garbageCollect();
 }
 
-void ChangeModeFromPreferences()
+void ChangeSettingsFromPreferences(String data)
 {
-    modeHandler.LightSwitch(preferences["light_switch"].as<bool>());
-    FastLED.setBrightness(preferences["brightness"].as<int>());
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc;
+    deserializeJson(doc, data);
 
-    int last_id = preferences["mode"].as<int>();
-    StaticJsonDocument<512> args = preferences["args"][last_id];
+    modeHandler.LightSwitch(doc["light_switch"].as<bool>());
+    FastLED.setBrightness(doc["brightness"].as<int>());
+
+    int last_id = doc["mode"].as<int>();
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"][last_id];
 
     modeHandler.ChangeMode(
         last_id, args);
 
     args.garbageCollect();
+    doc.garbageCollect();
 }

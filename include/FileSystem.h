@@ -10,6 +10,7 @@
 void GetWifiSettings(String *);
 String GetPreferences();
 void SavePreferences(String);
+String GetModeArgs(int);
 void FSBegin();
 
 #endif

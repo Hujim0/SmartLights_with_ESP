@@ -32,6 +32,7 @@ public:
     void OnNewMessage(OnNewMessageHandler);
     void OnNewClient(OnNewClientHandler);
     void CleanUp();
+    void CheckStatus();
     void SentTextToClient(int, const char *);
 
     static NetworkManager *Instance;
