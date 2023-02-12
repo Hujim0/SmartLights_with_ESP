@@ -34,6 +34,7 @@ public:
     void CleanUp();
     void CheckStatus();
     void SentTextToClient(int, const char *);
+    void SentTextToAll(const char *);
 
     static NetworkManager *Instance;
 

@@ -13,11 +13,16 @@ StaticMode::StaticMode()
     color = CRGB::White;
 }
 
-StaticMode::StaticMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
+StaticMode::StaticMode(const char *data)
 {
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
+    deserializeJson(args, data);
+
     color = CRGB(args["r"].as<int>(),
                  args["g"].as<int>(),
                  args["b"].as<int>());
+
+    args.garbageCollect();
 }
 StaticMode::~StaticMode()
 {

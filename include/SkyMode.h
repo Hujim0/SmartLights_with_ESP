@@ -16,7 +16,7 @@ private:
 public:
     void update(CRGB *);
     SkyMode();
-    SkyMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
+    SkyMode(const char *);
     ~SkyMode();
 };
 

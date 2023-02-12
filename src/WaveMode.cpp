@@ -26,8 +26,11 @@ void WaveMode::update(CRGB *leds)
     offset += speed * (((length + 1.0F) * 2) / 255.0F); // to make it the same as in rainbow mode
 }
 
-WaveMode::WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
+WaveMode::WaveMode(const char *data)
 {
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
+    deserializeJson(args, data);
+
     color = CRGB(args["r"].as<int>(),
                  args["g"].as<int>(),
                  args["b"].as<int>());
@@ -49,6 +52,8 @@ WaveMode::WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
     {
         speed = speed * -1.0F;
     }
+
+    args.garbageCollect();
 }
 
 WaveMode::WaveMode()

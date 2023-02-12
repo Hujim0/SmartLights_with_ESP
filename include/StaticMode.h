@@ -11,7 +11,7 @@ private:
 public:
     void update(CRGB *);
     StaticMode();
-    StaticMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
+    StaticMode(const char*);
     ~StaticMode();
 };
 

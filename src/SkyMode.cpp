@@ -45,8 +45,11 @@ SkyMode::SkyMode()
 {
 }
 
-SkyMode::SkyMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
+SkyMode::SkyMode(const char *data)
 {
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
+    deserializeJson(args, data);
+
     pivot_mode = args["edit"].as<bool>();
     if (!pivot_mode)
     {
@@ -55,5 +58,7 @@ SkyMode::SkyMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
     sunrise_point = args["start"].as<int>();
     sunset_point = args["end"].as<int>();
     length = args["length"].as<float>();
+
+    args.garbageCollect();
 }
 SkyMode::~SkyMode() {}

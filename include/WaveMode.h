@@ -19,7 +19,7 @@ public:
     void setup(CRGB *);
     void update(CRGB *);
     WaveMode();
-    WaveMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
+    WaveMode(const char *);
     ~WaveMode();
 };
 

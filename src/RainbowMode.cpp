@@ -33,8 +33,11 @@ RainbowMode::RainbowMode()
     }
 }
 
-RainbowMode::RainbowMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
+RainbowMode::RainbowMode(const char *data)
 {
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
+    deserializeJson(args, data);
+
     speed = args["speed"].as<float>();
     count = args["count"].as<int>();
     reversed = args["reversed"].as<bool>();
@@ -44,6 +47,8 @@ RainbowMode::RainbowMode(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &args)
     {
         hueConst *= -1;
     }
+
+    args.garbageCollect();
 }
 RainbowMode::~RainbowMode()
 {

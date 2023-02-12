@@ -14,11 +14,12 @@ private:
     Mode *current_mode;
 
 public:
+    int current_mode_id;
     bool led_state = true;
     void LightSwitch(bool);
-    void ChangeMode(int, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> &);
+    void ChangeMode(int, const char *);
     void ChangeMode(int);
-    void ChangeModeFromJson(int, StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE>);
+    // void ChangeModeFromJson(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE>);
     void update(CRGB *);
     ModeHandler();
     ~ModeHandler();

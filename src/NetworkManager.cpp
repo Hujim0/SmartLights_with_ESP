@@ -32,6 +32,12 @@ void NetworkManager::SentTextToClient(int id, const char *data)
 {
     webSocket.text(id, data);
 }
+void NetworkManager::SentTextToAll(const char *data)
+{
+    Serial.print("Texted to all: ");
+    Serial.println(data);
+    webSocket.textAll(data);
+}
 
 void NetworkManager::Begin(const char *ssid, const char *password)
 {

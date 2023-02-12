@@ -116,92 +116,69 @@ void OnClientConnected(int id)
     network.SentTextToClient(id, GetPreferences().c_str());
 }
 
-bool checkPreferences(DynamicJsonDocument &pref)
-{
-    for (int i = 0; i < (int)pref["args"].size(); i++)
-    {
-        if (pref["args"][i].size() == 0 || pref["args"][i] == NULL)
-        {
-            Serial.println(i);
-            return false;
-        }
-    }
-
-    return true;
-}
 void OnWebSocketMessage(String data)
 {
-    // if (data[0] != '{')
-    //     return;
-    // serializeJson(preferences, Serial);
-    // Serial.print("--endln ");
-    // modeHandler.ChangeModeFromJson(data, preferences);
-    // bool isValid = checkPreferences(preferences);
-    // Serial.print("preferences is valid = ");
-    // Serial.println(isValid);
-    // if (!isValid)
-    // {
-    //     serializeJson(preferences, Serial);
-    //     return;
-    // }
-    // String json;
-    // serializeJsonPretty(preferences, json);
-    // SavePreferences(json);
-
     if (data[0] != '{')
         return;
-
-    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
-    deserializeJson(preferences, GetPreferences());
 
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc;
     deserializeJson(doc, data.c_str());
 
-    modeHandler.ChangeModeFromJson(doc);
-
     serializeJson(doc, Serial);
 
-    if (doc["event"] == MODE_SWITCH)
+    if (doc.containsKey("event"))
     {
-        int mode_id = doc["value"].as<int>();
-        preferences["mode"] = mode_id;
-        preferences["args"][mode_id] = doc["args"];
-        // JsonObject obj = preferences["args"][mode_id];
-        // JsonObject args = doc["args"];
-        // // MemoryPool pool =
-        // obj.clear();
-        // for (JsonPair kv : args)
-        // {
-        //     obj[kv.key().c_str()] = args[kv.key().c_str()];
-        // }
+        StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+        deserializeJson(preferences, GetPreferences());
+
+        if (doc["event"] == MODE_SWITCH)
+        {
+            int mode_id = doc["value"].as<int>();
+            preferences["mode"] = mode_id;
+            network.SentTextToAll(GetModeArgs(mode_id).c_str());
+
+            modeHandler.ChangeMode(mode_id, GetModeArgs(mode_id).c_str());
+        }
+        if (doc["event"] == BRIGHTNESS)
+        {
+            int value = doc["value"].as<int>();
+            FastLED.setBrightness(value);
+            preferences[BRIGHTNESS] = value;
+        }
+        if (doc["event"] == LIGHT_SWITCH)
+        {
+            bool value = doc["value"].as<bool>();
+            modeHandler.LightSwitch(value);
+            preferences[LIGHT_SWITCH] = value;
+        }
+        String json;
+        serializeJsonPretty(preferences, json);
+        SavePreferences(json);
+
+        preferences.garbageCollect();
+        doc.garbageCollect();
+        return;
     }
 
-    if (doc["event"] == BRIGHTNESS)
-        preferences[BRIGHTNESS] = doc["value"].as<int>();
-    if (doc["event"] == LIGHT_SWITCH)
-        preferences[LIGHT_SWITCH] = doc["value"].as<bool>();
+    doc.garbageCollect();
 
-    String json;
-    serializeJsonPretty(preferences, json);
-    SavePreferences(json);
-    // doc.garbageCollect();
-    preferences.garbageCollect();
+    modeHandler.ChangeMode(modeHandler.current_mode_id, data.c_str());
+
+    SaveModeArgs(modeHandler.current_mode_id, data);
 }
 
 void ChangeSettingsFromPreferences(String data)
 {
-    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc;
-    deserializeJson(doc, data);
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+    deserializeJson(preferences, data);
 
-    modeHandler.LightSwitch(doc["light_switch"].as<bool>());
-    FastLED.setBrightness(doc["brightness"].as<int>());
+    modeHandler.LightSwitch(preferences["light_switch"].as<bool>());
+    FastLED.setBrightness(preferences["brightness"].as<int>());
 
-    int last_id = doc["mode"].as<int>();
-    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args = doc["args"][last_id];
+    int mode_id = preferences["mode"].as<int>();
+
+    preferences.garbageCollect();
 
     modeHandler.ChangeMode(
-        last_id, args);
-
-    args.garbageCollect();
-    doc.garbageCollect();
+        mode_id, GetModeArgs(mode_id).c_str());
 }

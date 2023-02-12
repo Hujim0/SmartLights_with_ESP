@@ -16,7 +16,7 @@
     </p>
     <p>
         <label>Brightness</label>
-        <input type="range" id="brightness_slider" min="5" max="255" />
+        <input type="range" id="brightness_slider" min="5" max="255" value="5" />
     </p>
     <p>
         <label> Light mode</label>
@@ -91,30 +91,43 @@
 
     function onClose(event) {
         console.log('Connection closed');
-        modes = null;
+        current_mode = null;
         window.dispatchEvent(OnLostConnection);
         setTimeout(BeginWebSocket, 2000);
     }
 
-    var modes = null;
+    var current_mode = null;
+    var preferences = null;
 
     const OnGetPreferences = new Event("onGetPreferences");
+    const OnGetMode = new Event("onGetMode");
     const OnLostConnection = new Event("onLostConnection");
 
     function onMessage(event) {
-        console.log(event.data);
-        if (modes == null) {
-            modes = JSON.parse(event.data);
+        if (preferences == null) {
+            preferences = JSON.parse(event.data);
             window.dispatchEvent(OnGetPreferences);
+            return;
         }
+        console.log(event.data);
+        current_mode = JSON.parse(event.data);
+        window.dispatchEvent(OnGetMode);
     }
+
+    window.addEventListener("onGetPreferences", (event) => {
+        console.log("Got preferences!")
+    });
+    window.addEventListener("onLostConnection", (event) => {
+        console.log("Lost connection!")
+        preferences = null;
+    });
 
     //---------------------------------------------------------------------------
 
     var checkbox = document.getElementById("light_switch_checkbox");
 
     window.addEventListener("onGetPreferences", (event) => {
-        checkbox.checked = modes.light_switch;
+        checkbox.checked = preferences.light_switch;
         checkbox.addEventListener("click", OnLightSwitchChanged);
     });
     window.addEventListener("onLostConnection", (event) => {
@@ -122,7 +135,7 @@
     });
 
     function OnLightSwitchChanged() {
-        modes.light_switch = checkbox.checked;
+        preferences.light_switch = checkbox.checked;
 
         //json formatting
         websocket.send("{\"event\":\"light_switch\"," +
@@ -132,7 +145,61 @@
 
     //---------------------------------------------------------------------------
 
+    var brigthness_slider = document.getElementById("brightness_slider");
+
+    window.addEventListener("onGetPreferences", (event) => {
+
+        brigthness_slider.value = preferences.brightness;
+
+        brigthness_slider.addEventListener("change", OnBrightnessUpdate);
+    });
+
+    window.addEventListener("onLostConnection", (event) => {
+        brigthness_slider.removeEventListener("change", OnBrightnessUpdate);
+    });
+
+    function OnBrightnessUpdate() {
+        preferences.brightness = brigthness_slider.value;
+
+        websocket.send("{\"event\":\"brightness\"," +
+            "\"value\":" + brigthness_slider.value +
+            "}");
+    }
+    //---------------------------------------------------------------------------
+
     var color_picker = document.getElementById("color_picker");
+
+    window.addEventListener("onGetPreferences", (event) => {
+        color_picker.addEventListener("change", OnColorPickerUpdate);
+    });
+
+    window.addEventListener("onLostConnection", (event) => {
+        color_picker.removeEventListener("change", OnColorPickerUpdate);
+    });
+
+
+    function OnColorPickerUpdate() {
+        var color = color_picker.value;
+        const r = parseInt(color.substr(1, 2), 16);
+        current_mode.r = r;
+        const g = parseInt(color.substr(3, 2), 16);
+        current_mode.g = g;
+        const b = parseInt(color.substr(5, 2), 16);
+        current_mode.b = b;
+
+        SendCurrentArgs();
+    }
+
+    function decToHex(c) {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+
+    function rgbToHex(r, g, b) {
+        return "#" + decToHex(r) + decToHex(g) + decToHex(b);
+    }
+
+    //---------------------------------------------------------------------------
 
     var speed_input = document.getElementById("speed_input");
     var count_input = document.getElementById("count_input");
@@ -196,8 +263,8 @@
 
     window.addEventListener("onGetPreferences", (event) => {
 
-        select.selectedIndex = modes.mode;
-        UpdateModeElements();
+        select.selectedIndex = preferences.mode;
+        ChangeMode(preferences.mode);
 
         select.addEventListener("change", (event) => {
             ChangeMode(event.currentTarget.selectedIndex);
@@ -212,83 +279,56 @@
 
     //send update func
     function ChangeMode(id) {
-        if (modes == null) return;
+        preferences.mode = id;
 
-        modes.mode = id;
+        window.addEventListener("onGetMode", OnGetArgs);
 
+        websocket.send("{\"event\":\"mode_switch\"," +
+            "\"value\":" + preferences.mode +
+            "}");
+    }
+
+    function OnGetArgs() {
         UpdateModeElements();
-
-        SendCurrentArgs();
-
+        window.removeEventListener("onGetMode", OnGetArgs);
     }
 
     function SendCurrentArgs() {
-        if (modes == null) return;
-
-        websocket.send("{\"event\":\"mode_update\"," +
-            "\"value\":" + modes.mode + GetArgs() + "}");
+        ApplyArgs();
+        websocket.send(JSON.stringify(current_mode));
     }
 
-    function GetArgs() {
-        var current_mode = modes.mode;
-
-        var args = ",\"args\":{";
-
-        var hasColor = (modes.args[current_mode].r != null) &&
-            (modes.args[current_mode].g != null) &&
-            (modes.args[current_mode].b != null);
-        if (hasColor) {
-            args += "\"r\":" + modes.args[current_mode].r + ", " +
-                "\"g\":" + modes.args[current_mode].g + ", " +
-                "\"b\":" + modes.args[current_mode].b + ",";
-        }
-
+    function ApplyArgs() {
         for (var i = 0; i < inputs_dictionary.length; i++) {
-            args += checkHasArg(inputs_dictionary[i].elem,
+            ApplyArg(inputs_dictionary[i].elem,
                 inputs_dictionary[i].property);
         }
-
-        if (args == ",\"args\":{") { //none of the args are found
-            return "";
-        }
-
-        if (args.endsWith(",")) {
-            args = args.substring(0, args.length - 1);
-        }
-
-        args += "}";
-
-        console.log(args);
-
-        return args;
     }
 
-    function checkHasArg(elem, property) {
-        var hasProperty = modes.args[modes.mode][property] != null;
-        if (!hasProperty) {
-            return "";
-        }
+    function ApplyArg(elem, property) {
+        var hasProperty = current_mode[property] != null;
+
+        if (!hasProperty) return;
 
         if (property == "reversed" || property == "edit") {
-            modes.args[modes.mode][property] = elem.checked;
-            return " \"" + property + "\":" + elem.checked + ",";
+            current_mode[property] = elem.checked;
+            return;
         }
 
-        modes.args[modes.mode][property] = elem.value;
-
-        return " \"" + property + "\":" + elem.value + ",";
+        current_mode[property] = elem.value;
     }
 
     function UpdateModeElements() {
-        var current_mode = modes.mode;
         //-----color-------
-        var hasColor = modes.args[current_mode].r != null;
+        var hasColor = (current_mode.r != null) &&
+            (current_mode.g != null) &&
+            (current_mode.b != null);
 
         color_picker.parentElement.hidden = !hasColor;
         if (hasColor) {
-            var r = modes.args[current_mode].r;
-            var g = modes.args[current_mode].g;
-            var b = modes.args[current_mode].b;
+            var r = current_mode.r;
+            var g = current_mode.g;
+            var b = current_mode.b;
 
             color_picker.value = rgbToHex(r, g, b);
         }
@@ -300,73 +340,16 @@
     }
 
     function checkElement(elem, property) {
-        var hasProperty = modes.args[modes.mode][property] != null;
+        var hasProperty = current_mode[property] != null;
         elem.parentElement.hidden = !hasProperty;
-        if (hasProperty) {
-            if (property == "reversed" || property == "edit") {
-                elem.checked = modes.args[modes.mode][property];
-                return;
-            }
-            elem.value = modes.args[modes.mode][property];
+        if (!hasProperty) return;
+
+        if (property == "reversed" || property == "edit") {
+            elem.checked = current_mode[property];
+            return;
         }
+        elem.value = current_mode[property];
     }
-    //---------------------------------------------------------------------------
-
-    window.addEventListener("onGetPreferences", (event) => {
-        color_picker.addEventListener("change", OnColorPickerUpdate);
-    });
-
-    window.addEventListener("onLostConnection", (event) => {
-        color_picker.removeEventListener("change", OnColorPickerUpdate);
-    });
-
-
-    function OnColorPickerUpdate() {
-        var color = color_picker.value;
-        var current_mode = modes.mode;
-        const r = parseInt(color.substr(1, 2), 16);
-        modes.args[current_mode].r = r;
-        const g = parseInt(color.substr(3, 2), 16);
-        modes.args[current_mode].g = g;
-        const b = parseInt(color.substr(5, 2), 16);
-        modes.args[current_mode].b = b;
-
-        SendCurrentArgs();
-    }
-
-    function decToHex(c) {
-        var hex = c.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-
-    function rgbToHex(r, g, b) {
-        return "#" + decToHex(r) + decToHex(g) + decToHex(b);
-    }
-
-    //---------------------------------------------------------------------------
-
-    slider = document.getElementById("brightness_slider");
-
-    window.addEventListener("onGetPreferences", (event) => {
-
-        slider.value = modes.brightness;
-
-        slider.addEventListener("change", OnBrightnessUpdate);
-    });
-
-    window.addEventListener("onLostConnection", (event) => {
-        slider.removeEventListener("change", OnBrightnessUpdate);
-    });
-
-    function OnBrightnessUpdate() {
-        modes.brightness = slider.value;
-
-        websocket.send("{\"event\":\"brightness\"," +
-            "\"value\":" + slider.value +
-            "}");
-
-    }
-
 
 </script>
 
