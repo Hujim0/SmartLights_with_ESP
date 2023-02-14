@@ -11,7 +11,7 @@
 #pragma endregion
 
 // #define DEBUG_HEAP
-// #define DEBUG_PREFERENCES
+//  #define DEBUG_PREFERENCES
 #define DEBUG_WIFI
 
 #include <main.h>
@@ -35,7 +35,8 @@ void ledSetup()
 {
     pinMode(STRIP_PIN, OUTPUT);
 
-    FastLED.addLeds<STRIP, STRIP_PIN, COLOR_ORDER>(leds, NUMPIXELS);
+    FastLED.addLeds<STRIP, STRIP_PIN, COLOR_ORDER>(leds, NUMPIXELS).setCorrection(TypicalLEDStrip);
+    FastLED.setMaxRefreshRate(60);
 
     FastLED.clearData();
     FastLED.clear();
@@ -100,6 +101,8 @@ void loop()
         network.CleanUp();
 
         network.CheckStatus();
+
+        ESP.resetHeap();
     }
 
     if (modeHandler.led_state)
@@ -124,47 +127,51 @@ void OnWebSocketMessage(String data)
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> doc;
     deserializeJson(doc, data.c_str());
 
-    serializeJson(doc, Serial);
-
-    if (doc.containsKey("event"))
+    if (!doc.containsKey("event"))
     {
-        StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
-        deserializeJson(preferences, GetPreferences());
-
-        if (doc["event"] == MODE_SWITCH)
-        {
-            int mode_id = doc["value"].as<int>();
-            preferences["mode"] = mode_id;
-            network.SentTextToAll(GetModeArgs(mode_id).c_str());
-
-            modeHandler.ChangeMode(mode_id, GetModeArgs(mode_id).c_str());
-        }
-        if (doc["event"] == BRIGHTNESS)
-        {
-            int value = doc["value"].as<int>();
-            FastLED.setBrightness(value);
-            preferences[BRIGHTNESS] = value;
-        }
-        if (doc["event"] == LIGHT_SWITCH)
-        {
-            bool value = doc["value"].as<bool>();
-            modeHandler.LightSwitch(value);
-            preferences[LIGHT_SWITCH] = value;
-        }
-        String json;
-        serializeJsonPretty(preferences, json);
-        SavePreferences(json);
-
-        preferences.garbageCollect();
         doc.garbageCollect();
-        return;
+
+        modeHandler.ChangeMode(modeHandler.current_mode_id, data.c_str());
+
+        SaveModeArgs(modeHandler.current_mode_id, data);
     }
 
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+    deserializeJson(preferences, GetPreferences());
+
+    if (doc["event"] == MODE_SWITCH)
+    {
+        int mode_id = doc["value"].as<int>();
+        preferences["mode"] = mode_id;
+        network.SentTextToAll(GetModeArgs(mode_id).c_str());
+
+        modeHandler.ChangeMode(mode_id, GetModeArgs(mode_id).c_str());
+    }
+    else if (doc["event"] == BRIGHTNESS)
+    {
+        int value = doc["value"].as<int>();
+        FastLED.setBrightness(value);
+        preferences[BRIGHTNESS] = value;
+    }
+    else if (doc["event"] == LIGHT_SWITCH)
+    {
+        bool value = doc["value"].as<bool>();
+        modeHandler.LightSwitch(value);
+        preferences[LIGHT_SWITCH] = value;
+    }
+    else if (doc["event"] == ARGS_REQUEST)
+    {
+        int mode_id = doc["value"].as<int>();
+        network.SentTextToAll(GetModeArgs(mode_id).c_str());
+    }
+
+    String json;
+    serializeJsonPretty(preferences, json);
+    SavePreferences(json);
+
+    preferences.garbageCollect();
     doc.garbageCollect();
-
-    modeHandler.ChangeMode(modeHandler.current_mode_id, data.c_str());
-
-    SaveModeArgs(modeHandler.current_mode_id, data);
+    return;
 }
 
 void ChangeSettingsFromPreferences(String data)

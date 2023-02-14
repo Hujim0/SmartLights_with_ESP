@@ -91,9 +91,12 @@
 
     function onClose(event) {
         console.log('Connection closed');
+        preferences = null;
         current_mode = null;
         window.dispatchEvent(OnLostConnection);
+        location.reload();
         setTimeout(BeginWebSocket, 2000);
+
     }
 
     var current_mode = null;
@@ -264,7 +267,7 @@
     window.addEventListener("onGetPreferences", (event) => {
 
         select.selectedIndex = preferences.mode;
-        ChangeMode(preferences.mode);
+        RequestArgs(preferences.mode);
 
         select.addEventListener("change", (event) => {
             ChangeMode(event.currentTarget.selectedIndex);
@@ -284,6 +287,15 @@
         window.addEventListener("onGetMode", OnGetArgs);
 
         websocket.send("{\"event\":\"mode_switch\"," +
+            "\"value\":" + preferences.mode +
+            "}");
+    }
+
+    function RequestArgs(id) {
+
+        window.addEventListener("onGetMode", OnGetArgs);
+
+        websocket.send("{\"event\":\"mode_args_request\"," +
             "\"value\":" + preferences.mode +
             "}");
     }

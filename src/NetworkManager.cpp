@@ -18,7 +18,7 @@ void NetworkManager::handleWebSocketMessage(void *arg, uint8_t *data, size_t len
     }
     data[len] = 0;
 
-    Serial.print("From websocket: \"");
+    Serial.print("[Websocket] Got: \"");
     Serial.print((char *)data);
     Serial.println("\" --endln");
 
@@ -52,7 +52,7 @@ void NetworkManager::Begin(const char *ssid, const char *password)
 
     if (WiFi.waitForConnectResult(ATTEMPT_DURATION) != WL_CONNECTED)
     {
-        ESP.restart();
+        // ESP.restart();
         return;
     }
 

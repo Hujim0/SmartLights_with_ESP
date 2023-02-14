@@ -7,6 +7,7 @@
 #define MODE_SWITCH "mode_switch"
 #define MODE_UPDATE "mode_update"
 #define BRIGHTNESS "brightness"
+#define ARGS_REQUEST "mode_args_request"
 
 class ModeHandler
 {

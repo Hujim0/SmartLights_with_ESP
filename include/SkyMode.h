@@ -13,6 +13,12 @@ private:
 
     unsigned long sunrise_start_time;
 
+    void ShowEditMode(CRGB *);
+    void ShowSunriseLight(float, CRGB *);
+    void ShowSunriseSun(float, CRGB *);
+
+    CRGB SUNRISE_COLOR;
+
 public:
     void update(CRGB *);
     SkyMode();
