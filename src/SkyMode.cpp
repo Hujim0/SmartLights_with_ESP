@@ -12,7 +12,6 @@ const unsigned long MILLIS_BEFORE_SUNRISE_START = 0;
 #define SECONDS_BEFORE_SUN_FULLY_CAME_OUT 30.0F
 
 const CRGB SUNRISE_SUN_COLOR = CRGB(255, 0, 0);
-const CRGB SUN_COLOR = CRGB(255, 40, 0);
 
 void SkyMode::update(CRGB *leds)
 {
@@ -25,7 +24,7 @@ void SkyMode::update(CRGB *leds)
     if (millis() < sunrise_start_time)
         return;
 
-    float SecondsSinceSunriseStart = (float)(millis() - sunrise_start_time) / 1000.0F;
+    float SecondsSinceSunriseStart = (float)(millis() - sunrise_start_time) / (10.0F * ((50 - speed) * 4));
 
     // initial sunrise ligtht
     if (SecondsSinceSunriseStart <= SECONDS_BEFORE_SKY_SHOWS)
@@ -35,6 +34,22 @@ void SkyMode::update(CRGB *leds)
 
     if (SecondsSinceSunriseStart >= SECONDS_BEFORE_SUN_STARTS_TO_SHOW)
     {
+        const float DELAY = 20.0F;
+
+        if (SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW > DELAY && SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW < DELAY + 30.0F)
+        {
+            float phase = (SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW - DELAY);
+
+            SUN_COLOR = CHSV(phase * 1.3F, 255.0F - phase * 2.5F, 255);
+
+            SKY_COLOR = CHSV(skyHue + phase * 3.0F, 255.0F - phase * 5.0F, skyValue - phase * 0.2F);
+
+            for (int i = 0; i < NUMPIXELS; i++)
+            {
+                leds[i] = SKY_COLOR;
+            }
+        }
+
         ShowSunriseSun(SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW, leds);
     }
 }
@@ -57,11 +72,12 @@ SkyMode::SkyMode(const char *data)
     }
     sunrise_point = args["start"].as<int>();
     sunset_point = args["end"].as<int>();
-    length = args["length"].as<float>();
+    speed = args["speed"].as<int>();
 
     args.garbageCollect();
 
-    SUNRISE_COLOR = CHSV(0, 255, 60);
+    SKY_COLOR = CHSV(0, 255, 60);
+    SUN_COLOR = CRGB(255, 0, 0);
 }
 SkyMode::~SkyMode() {}
 
@@ -86,36 +102,14 @@ void SkyMode::ShowSunriseLight(float SecondsSinceSunriseStart, CRGB *leds)
 
     if (SecondsSinceSunriseStart > SECONDS_BEFORE_HUE_TILT && SecondsSinceSunriseStart < 23.0F)
     {
-        SUNRISE_COLOR = CHSV((SecondsSinceSunriseStart - SECONDS_BEFORE_HUE_TILT) * 0.8, 255, 150 * phase);
+        skyHue = (SecondsSinceSunriseStart - SECONDS_BEFORE_HUE_TILT) * 0.8F;
+        skyValue = 120.0F * phase;
+        SKY_COLOR = CHSV(skyHue, 255, skyValue);
     }
 
-    for (int i = sunrise_point; i <= sunrise_point + INITIAL_GLOW_RADIUS; i++)
+    for (int i = 0; i < NUMPIXELS; i++)
     {
-        float intensity = 1.0F;
-
-        if (i - sunrise_point > INITIAL_GLOW_RADIUS - SUNRISE_GLOW_DROPOFF)
-        {
-            intensity *= (float)(INITIAL_GLOW_RADIUS - (i - sunrise_point)) / (float)SUNRISE_GLOW_DROPOFF;
-        }
-
-        if (intensity <= 0.0F)
-            continue;
-
-        intensity = pow(intensity, SUNRISE_STEEPNESS);
-
-        if (intensity >= 1.0F)
-            intensity = 1.0F;
-
-        CRGB new_color = CRGB(SUNRISE_COLOR.r * intensity,
-                              SUNRISE_COLOR.g * intensity,
-                              SUNRISE_COLOR.b * intensity);
-
-        leds[i] = new_color;
-
-        if (sunrise_point * 2 - i < 0)
-            continue;
-
-        leds[sunrise_point * 2 - i] = new_color;
+        leds[i] = SKY_COLOR;
     }
 }
 
@@ -126,7 +120,7 @@ void SkyMode::ShowSunriseSun(float SecondsSinceSunriseStart, CRGB *leds)
     if (phase >= 1.0F)
         phase = 1.0F;
 
-    float SunOffset = SecondsSinceSunriseStart * 0.3F;
+    float SunOffset = SecondsSinceSunriseStart * 0.15F;
 
     // for (int i = sunrise_point + floor(SunOffset); i < sunrise_point + SUN_RADIUS + 3 + floor(SunOffset); i++)
     for (int i = 0; i < NUMPIXELS; i++)
@@ -144,31 +138,10 @@ void SkyMode::ShowSunriseSun(float SecondsSinceSunriseStart, CRGB *leds)
         if (multiplier <= 0.0F)
             multiplier = 0.0F;
 
-        CRGB new_color = SUNRISE_COLOR + CRGB(SUNRISE_SUN_COLOR.r * multiplier,
-                                              SUNRISE_SUN_COLOR.g * multiplier,
-                                              SUNRISE_SUN_COLOR.b * multiplier);
+        CRGB new_color = SKY_COLOR + CRGB(SUN_COLOR.r * multiplier,
+                                          SUN_COLOR.g * multiplier,
+                                          SUN_COLOR.b * multiplier);
 
-        if (i < NUMPIXELS)
-            leds[i] = new_color;
-
-        // if ((sunrise_point)*2 - i > 0)
-        //     leds[(sunrise_point)*2 - i] = new_color;
-
-        // const float threshold = 0.66F;
-
-        // if (phase < threshold)
-        //     continue;
-
-        // float _phase = (phase - threshold) / (1 - threshold) * multiplier;
-
-        // if (_phase >= 1.0F)
-        //     _phase = 1.0F;
-
-        // CRGB additional_color = CRGB(SUN_COLOR.r * _phase,
-        //                              SUN_COLOR.g * _phase,
-        //                              SUN_COLOR.b * _phase);
-
-        // leds[i] += additional_color;
-        // leds[sunrise_point * 2 - i] += additional_color;
+        leds[i] = new_color;
     }
 }

@@ -9,7 +9,7 @@ private:
     bool pivot_mode;
     int sunrise_point;
     int sunset_point;
-    int length;
+    int speed;
 
     unsigned long sunrise_start_time;
 
@@ -17,10 +17,15 @@ private:
     void ShowSunriseLight(float, CRGB *);
     void ShowSunriseSun(float, CRGB *);
 
-    CRGB SUNRISE_COLOR;
+    CRGB SUN_COLOR;
+    CRGB SKY_COLOR;
+
+    float skyHue;
+    float skyValue;
 
 public:
-    void update(CRGB *);
+    void
+    update(CRGB *);
     SkyMode();
     SkyMode(const char *);
     ~SkyMode();
