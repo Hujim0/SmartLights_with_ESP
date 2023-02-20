@@ -15,12 +15,15 @@ StaticMode::StaticMode()
 
 StaticMode::StaticMode(const char *data)
 {
+    update_args(data);
+}
+
+void StaticMode::update_args(const char *data)
+{
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
-    color = CRGB(args["r"].as<int>(),
-                 args["g"].as<int>(),
-                 args["b"].as<int>());
+    color = toHex(args["color"].as<String>());
 
     args.garbageCollect();
 }

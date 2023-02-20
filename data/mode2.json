@@ -1,7 +1,5 @@
 {
-    "r": 255,
-    "g": 255,
-    "b": 255,
+    "color": "#FFFFFF",
     "speed": 10,
     "length": 10,
     "intensity": 90,

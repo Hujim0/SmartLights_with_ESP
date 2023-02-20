@@ -155,51 +155,69 @@
         brigthness_slider.value = preferences.brightness;
 
         brigthness_slider.addEventListener("change", OnBrightnessUpdate);
+        brigthness_slider.addEventListener("input", handleBrigthnessInput);
     });
 
     window.addEventListener("onLostConnection", (event) => {
         brigthness_slider.removeEventListener("change", OnBrightnessUpdate);
+        brigthness_slider.removeEventListener("input", handleBrigthnessInput);
     });
 
+    var sentBrigthnessStreamEvent = false;
     function OnBrightnessUpdate() {
         preferences.brightness = brigthness_slider.value;
+
+        websocket.send("]");
+        console.log("closing stream");
+        sentBrigthnessStreamEvent = false;
 
         websocket.send("{\"event\":\"brightness\"," +
             "\"value\":" + brigthness_slider.value +
             "}");
+
+
+    }
+
+    function handleBrigthnessInput() {
+        if (!sentBrigthnessStreamEvent) {
+            console.log("starting slider event");
+            websocket.send("{\"event\":\"open_stream\"," +
+                "\"value\":\"brightness\"" +
+                "}");
+            sentBrigthnessStreamEvent = true;
+        }
+        console.log(brigthness_slider.value);
+        websocket.send(brigthness_slider.value);
     }
     //---------------------------------------------------------------------------
-
     var color_picker = document.getElementById("color_picker");
 
     window.addEventListener("onGetPreferences", (event) => {
         color_picker.addEventListener("change", OnColorPickerUpdate);
+        //color_picker.addEventListener("input", OnColorPickerUpdate);
     });
 
     window.addEventListener("onLostConnection", (event) => {
         color_picker.removeEventListener("change", OnColorPickerUpdate);
+        //color_picker.addEventListener("input", OnColorPickerUpdate);
     });
 
 
     function OnColorPickerUpdate() {
-        var color = color_picker.value;
-        const r = parseInt(color.substr(1, 2), 16);
-        current_mode.r = r;
-        const g = parseInt(color.substr(3, 2), 16);
-        current_mode.g = g;
-        const b = parseInt(color.substr(5, 2), 16);
-        current_mode.b = b;
+        //current_mode.color = color_picker.value;
 
-        SendCurrentArgs();
+        //SendCurrentArgs();
     }
 
-    function decToHex(c) {
-        var hex = c.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-
-    function rgbToHex(r, g, b) {
-        return "#" + decToHex(r) + decToHex(g) + decToHex(b);
+    var sentColorStreamEvent = false;
+    function handleColorInput() {
+        if (!sentColorStreamEvent) {
+            console.log("starting color event");
+            websocket.send("{\"event\":\"open_stream\"," +
+                "\"value\":\"color\"" +
+                "}");
+            sentBrigthnessStreamEvent = true;
+        }
     }
 
     //---------------------------------------------------------------------------
@@ -244,6 +262,10 @@
         {
             "elem": end_input,
             "property": "end"
+        },
+        {
+            "elem": color_picker,
+            "property": "color"
         }
     ]
 
@@ -331,20 +353,6 @@
     }
 
     function UpdateModeElements() {
-        //-----color-------
-        var hasColor = (current_mode.r != null) &&
-            (current_mode.g != null) &&
-            (current_mode.b != null);
-
-        color_picker.parentElement.hidden = !hasColor;
-        if (hasColor) {
-            var r = current_mode.r;
-            var g = current_mode.g;
-            var b = current_mode.b;
-
-            color_picker.value = rgbToHex(r, g, b);
-        }
-
         for (var i = 0; i < inputs_dictionary.length; i++) {
             checkElement(inputs_dictionary[i].elem,
                 inputs_dictionary[i].property);

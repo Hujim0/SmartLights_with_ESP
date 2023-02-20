@@ -6,7 +6,7 @@
 class SkyMode : public Mode
 {
 private:
-    bool pivot_mode;
+    bool edit_mode;
     int sunrise_point;
     int sunset_point;
     int speed;
@@ -24,8 +24,8 @@ private:
     float skyValue;
 
 public:
-    void
-    update(CRGB *);
+    void update(CRGB *);
+    void update_args(const char *);
     SkyMode();
     SkyMode(const char *);
     ~SkyMode();

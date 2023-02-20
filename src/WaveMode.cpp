@@ -18,7 +18,7 @@ void WaveMode::update(CRGB *leds)
                        color.g * intensity_const,
                        color.b * intensity_const);
     }
-    if (offset >= TWO_PI * 10)
+    if (abs(offset) >= TWO_PI * 10)
     {
         offset = 0;
         return;
@@ -28,12 +28,15 @@ void WaveMode::update(CRGB *leds)
 
 WaveMode::WaveMode(const char *data)
 {
+    update_args(data);
+}
+
+void WaveMode::update_args(const char *data)
+{
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
-    color = CRGB(args["r"].as<int>(),
-                 args["g"].as<int>(),
-                 args["b"].as<int>());
+    color = toHex(args["color"].as<String>());
 
     speed = args["speed"].as<float>();
     intensity = args["intensity"].as<float>() * 0.01F;

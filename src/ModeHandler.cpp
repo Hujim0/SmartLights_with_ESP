@@ -13,7 +13,9 @@ void ModeHandler::LightSwitch(bool state)
 
     if (!state)
     {
-        FastLED.showColor(CRGB::Black);
+        FastLED.clear();
+        FastLED.clearData();
+        FastLED.show();
         return;
     }
 }
@@ -29,11 +31,9 @@ void ModeHandler::ChangeMode(int id, const char *args)
     case 0:
         current_mode = new StaticMode(args);
         return;
-
     case 1:
         current_mode = new RainbowMode(args);
         return;
-
     case 2:
         current_mode = new WaveMode(args);
         return;
@@ -75,7 +75,13 @@ void ModeHandler::ChangeMode(int id)
 
 void ModeHandler::update(CRGB *leds)
 {
-    current_mode->update(leds);
+    if (current_mode != NULL && led_state)
+        current_mode->update(leds);
+}
+void ModeHandler::UpdateArgs(const char *data)
+{
+    if (current_mode != NULL)
+        current_mode->update_args(data);
 }
 
 ModeHandler::ModeHandler()

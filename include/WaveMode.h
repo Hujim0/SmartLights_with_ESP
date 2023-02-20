@@ -18,6 +18,7 @@ private:
 public:
     void setup(CRGB *);
     void update(CRGB *);
+    void update_args(const char *);
     WaveMode();
     WaveMode(const char *);
     ~WaveMode();

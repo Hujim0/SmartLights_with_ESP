@@ -10,8 +10,9 @@ private:
 
 public:
     void update(CRGB *);
+    void update_args(const char *data);
     StaticMode();
-    StaticMode(const char*);
+    StaticMode(const char *);
     ~StaticMode();
 };
 

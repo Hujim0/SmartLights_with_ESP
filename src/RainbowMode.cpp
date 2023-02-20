@@ -33,7 +33,7 @@ RainbowMode::RainbowMode()
     }
 }
 
-RainbowMode::RainbowMode(const char *data)
+void RainbowMode::update_args(const char *data)
 {
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
@@ -50,6 +50,10 @@ RainbowMode::RainbowMode(const char *data)
 
     args.garbageCollect();
 }
-RainbowMode::~RainbowMode()
+
+RainbowMode::RainbowMode(const char *data)
 {
+    update_args(data);
 }
+
+RainbowMode::~RainbowMode() {}

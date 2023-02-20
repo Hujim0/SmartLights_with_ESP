@@ -108,8 +108,8 @@ void loop()
     if (modeHandler.led_state)
     {
         modeHandler.update(leds);
-        FastLED.show();
     }
+    FastLED.show();
 }
 
 void OnClientConnected(int id)
@@ -119,8 +119,25 @@ void OnClientConnected(int id)
     network.SentTextToClient(id, GetPreferences().c_str());
 }
 
+String current_stream = "";
+
 void OnWebSocketMessage(String data)
 {
+    if (current_stream != "")
+    {
+        if (data.endsWith("]"))
+        {
+            current_stream = "";
+            return;
+        }
+
+        if (current_stream == BRIGHTNESS)
+        {
+            FastLED.setBrightness(data.toInt());
+            return;
+        }
+    }
+
     if (data[0] != '{')
         return;
 
@@ -131,7 +148,7 @@ void OnWebSocketMessage(String data)
     {
         doc.garbageCollect();
 
-        modeHandler.ChangeMode(modeHandler.current_mode_id, data.c_str());
+        modeHandler.UpdateArgs(data.c_str());
 
         SaveModeArgs(modeHandler.current_mode_id, data);
     }
@@ -163,6 +180,10 @@ void OnWebSocketMessage(String data)
     {
         int mode_id = doc["value"].as<int>();
         network.SentTextToAll(GetModeArgs(mode_id).c_str());
+    }
+    else if (doc["event"] == STREAM_OPEN)
+    {
+        current_stream = doc["value"].as<String>();
     }
 
     String json;

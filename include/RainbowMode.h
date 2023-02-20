@@ -15,6 +15,7 @@ private:
 
 public:
     void update(CRGB *);
+    void update_args(const char *data);
     RainbowMode();
     RainbowMode(const char *);
     ~RainbowMode();

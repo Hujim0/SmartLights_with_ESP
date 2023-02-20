@@ -8,11 +8,13 @@
 #define MODE_UPDATE "mode_update"
 #define BRIGHTNESS "brightness"
 #define ARGS_REQUEST "mode_args_request"
+#define STREAM_OPEN "open_stream"
+#define STREAM_CLOSE "close_stream"
 
 class ModeHandler
 {
 private:
-    Mode *current_mode;
+    Mode *current_mode = NULL;
 
 public:
     int current_mode_id;
@@ -20,7 +22,7 @@ public:
     void LightSwitch(bool);
     void ChangeMode(int, const char *);
     void ChangeMode(int);
-    // void ChangeModeFromJson(StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE>);
+    void UpdateArgs(const char *);
     void update(CRGB *);
     ModeHandler();
     ~ModeHandler();
