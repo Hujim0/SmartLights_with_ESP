@@ -83,6 +83,11 @@ void ModeHandler::UpdateArgs(const char *data)
     if (current_mode != NULL)
         current_mode->update_args(data);
 }
+void ModeHandler::PushArg(String arg, String value)
+{
+    if (current_mode != NULL)
+        current_mode->update_arg(arg, value);
+}
 
 ModeHandler::ModeHandler()
 {

@@ -38,9 +38,9 @@ void RainbowMode::update_args(const char *data)
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
-    speed = args["speed"].as<float>();
-    count = args["count"].as<int>();
-    reversed = args["reversed"].as<bool>();
+    speed = args[SPEED_ARG].as<float>();
+    count = args[COUNT_ARG].as<int>();
+    reversed = args[REVERSED_ARG].as<bool>();
 
     hueConst = (255.0 * count) / (NUMPIXELS);
     if (!reversed)
@@ -49,6 +49,12 @@ void RainbowMode::update_args(const char *data)
     }
 
     args.garbageCollect();
+}
+
+void RainbowMode::update_arg(String arg, String value)
+{
+    if (arg == SPEED_ARG)
+        speed = value.toFloat();
 }
 
 RainbowMode::RainbowMode(const char *data)

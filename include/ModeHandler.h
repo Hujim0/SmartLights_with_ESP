@@ -23,6 +23,7 @@ public:
     void ChangeMode(int, const char *);
     void ChangeMode(int);
     void UpdateArgs(const char *);
+    void PushArg(String, String);
     void update(CRGB *);
     ModeHandler();
     ~ModeHandler();

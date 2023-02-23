@@ -77,7 +77,9 @@ void setup()
     Serial.println("------------------------------------------------------------------");
 #endif
 
-    network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str());
+    while (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
+    {
+    }
 
     network.OnNewClient(OnClientConnected);
     network.OnNewMessage(OnWebSocketMessage);
@@ -132,10 +134,11 @@ void OnWebSocketMessage(String data)
         }
 
         if (current_stream == BRIGHTNESS)
-        {
             FastLED.setBrightness(data.toInt());
-            return;
-        }
+        else
+            modeHandler.PushArg(current_stream, data);
+
+        return;
     }
 
     if (data[0] != '{')

@@ -62,19 +62,26 @@ void SkyMode::update_args(const char *data)
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
-    edit_mode = args["edit"].as<bool>();
+    edit_mode = args[EDIT_ARG].as<bool>();
     if (edit_mode)
     {
         sunrise_start_time = millis() + MILLIS_BEFORE_SUNRISE_START;
     }
-    sunrise_point = args["start"].as<int>();
-    sunset_point = args["end"].as<int>();
-    speed = args["speed"].as<int>();
+    sunrise_point = args[START_ARG].as<int>();
+    sunset_point = args[END_ARG].as<int>();
+    speed = args[SPEED_ARG].as<int>();
 
     args.garbageCollect();
 
     SKY_COLOR = CHSV(0, 255, 60);
     SUN_COLOR = CRGB(255, 0, 0);
+}
+void SkyMode::update_arg(String arg, String value)
+{
+    if (arg = SPEED_ARG)
+    {
+        speed = value.toInt();
+    }
 }
 SkyMode::SkyMode(const char *data)
 {

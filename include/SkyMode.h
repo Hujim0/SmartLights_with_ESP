@@ -26,6 +26,7 @@ private:
 public:
     void update(CRGB *);
     void update_args(const char *);
+    void update_arg(String arg, String value);
     SkyMode();
     SkyMode(const char *);
     ~SkyMode();

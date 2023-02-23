@@ -27,42 +27,51 @@
             <option>Sky mode</option>
         </select>
     </p>
-    <p hidden>
-        <label>Edit</label>
-        <input type="checkbox" id="edit_input">
-    </p>
-    <p hidden>
-        <label>Speed</label>
-        <input type="range" id="speed_input" min="0" max="50">
-    </p>
-    <p hidden>
-        <label>count</label>
-        <input type="number" id="count_input">
-    </p>
-    <p hidden>
-        <label>Intensity</label>
-        <input type="range" id="intensity_input" min="0" max="100">
-    </p>
-    <p hidden>
-        <label>Length</label>
-        <input type="number" id="length_input">
-    </p>
-    <p hidden>
-        <label>Start</label>
-        <input type="number" id="start_input">
-    </p>
-    <p hidden>
-        <label>End</label>
-        <input type="number" id="end_input">
-    </p>
-    <p hidden>
-        <label>Reversed</label>
-        <input type="checkbox" id="reversed_input">
-    </p>
-    <p hidden>
-        <label>Color</label>
-        <input type="color" id="color_picker" />
-    </p>
+    <div class="list">
+        <style>
+            .list li {
+                padding: 7px;
+            }
+        </style>
+        <ul>
+            <li hidden>
+                <label>Edit</label>
+                <input type="checkbox" id="edit_input">
+            </li>
+            <li hidden>
+                <label>Speed</label>
+                <input type="range" id="speed_input" min="0" max="50">
+            </li>
+            <li hidden>
+                <label>count</label>
+                <input type="number" id="count_input">
+            </li>
+            <li hidden>
+                <label>Intensity</label>
+                <input type="range" id="intensity_input" min="0" max="100">
+            </li>
+            <li hidden>
+                <label>Length</label>
+                <input type="number" id="length_input">
+            </li>
+            <li hidden>
+                <label>Start</label>
+                <input type="number" id="start_input">
+            </li>
+            <li hidden>
+                <label>End</label>
+                <input type="number" id="end_input">
+            </li>
+            <li hidden>
+                <label>Reversed</label>
+                <input type="checkbox" id="reversed_input">
+            </li>
+            <li hidden>
+                <label>Color</label>
+                <input type="color" id="color_picker" />
+            </li>
+        </ul>
+    </div>
     <p></p>
     <p></p>
     <hr />
@@ -102,6 +111,8 @@
     var current_mode = null;
     var preferences = null;
 
+    var sentStreamEvent = false;
+
     const OnGetPreferences = new Event("onGetPreferences");
     const OnGetMode = new Event("onGetMode");
     const OnLostConnection = new Event("onLostConnection");
@@ -124,6 +135,12 @@
         console.log("Lost connection!")
         preferences = null;
     });
+
+    function EndStream() {
+        websocket.send("]");
+        console.log("closing stream");
+        sentStreamEvent = false;
+    }
 
     //---------------------------------------------------------------------------
 
@@ -154,37 +171,32 @@
 
         brigthness_slider.value = preferences.brightness;
 
+        brigthness_slider.addEventListener("change", EndStream)
         brigthness_slider.addEventListener("change", OnBrightnessUpdate);
         brigthness_slider.addEventListener("input", handleBrigthnessInput);
     });
 
     window.addEventListener("onLostConnection", (event) => {
+        brigthness_slider.removeEventListener("change", EndStream)
         brigthness_slider.removeEventListener("change", OnBrightnessUpdate);
         brigthness_slider.removeEventListener("input", handleBrigthnessInput);
     });
 
-    var sentBrigthnessStreamEvent = false;
     function OnBrightnessUpdate() {
         preferences.brightness = brigthness_slider.value;
-
-        websocket.send("]");
-        console.log("closing stream");
-        sentBrigthnessStreamEvent = false;
 
         websocket.send("{\"event\":\"brightness\"," +
             "\"value\":" + brigthness_slider.value +
             "}");
-
-
     }
 
     function handleBrigthnessInput() {
-        if (!sentBrigthnessStreamEvent) {
+        if (!sentStreamEvent) {
             console.log("starting slider event");
             websocket.send("{\"event\":\"open_stream\"," +
                 "\"value\":\"brightness\"" +
                 "}");
-            sentBrigthnessStreamEvent = true;
+            sentStreamEvent = true;
         }
         console.log(brigthness_slider.value);
         websocket.send(brigthness_slider.value);
@@ -193,31 +205,25 @@
     var color_picker = document.getElementById("color_picker");
 
     window.addEventListener("onGetPreferences", (event) => {
-        color_picker.addEventListener("change", OnColorPickerUpdate);
-        //color_picker.addEventListener("input", OnColorPickerUpdate);
+        color_picker.addEventListener("input", handleColorInput);
+        color_picker.addEventListener("change", EndStream)
     });
 
     window.addEventListener("onLostConnection", (event) => {
-        color_picker.removeEventListener("change", OnColorPickerUpdate);
-        //color_picker.addEventListener("input", OnColorPickerUpdate);
+        color_picker.removeEventListener("input", handleColorInput);
+        color_picker.removeEventListener("change", EndStream)
     });
 
-
-    function OnColorPickerUpdate() {
-        //current_mode.color = color_picker.value;
-
-        //SendCurrentArgs();
-    }
-
-    var sentColorStreamEvent = false;
     function handleColorInput() {
-        if (!sentColorStreamEvent) {
+        if (!sentStreamEvent) {
             console.log("starting color event");
             websocket.send("{\"event\":\"open_stream\"," +
                 "\"value\":\"color\"" +
                 "}");
-            sentBrigthnessStreamEvent = true;
+            sentStreamEvent = true;
         }
+
+        websocket.send(color_picker.value);
     }
 
     //---------------------------------------------------------------------------
@@ -269,11 +275,17 @@
         }
     ]
 
+    // function OnSpeedInput() {
+
+    //}
+
     window.addEventListener("onGetPreferences", (event) => {
         //color picker sends args only after updating the mode 
         for (var i = 0; i < inputs_dictionary.length; i++) {
             inputs_dictionary[i].elem.addEventListener("change", SendCurrentArgs);
         }
+
+        //speed_input.addEventListener("input", OnSpeedInput)
     });
 
     window.addEventListener("onLostConnection", (event) => {

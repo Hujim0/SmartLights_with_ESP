@@ -38,7 +38,7 @@ public:
 
     static NetworkManager *Instance;
 
-    void Begin(const char *, const char *);
+    bool Begin(const char *, const char *);
 };
 
 #endif

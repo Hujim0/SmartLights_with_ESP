@@ -36,20 +36,20 @@ void WaveMode::update_args(const char *data)
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
-    color = toHex(args["color"].as<String>());
+    color = toHex(args[COLOR_ARG].as<String>());
 
-    speed = args["speed"].as<float>();
-    intensity = args["intensity"].as<float>() * 0.01F;
-    if (args["length"].as<float>() == 0.0F)
+    speed = args[SPEED_ARG].as<float>();
+    intensity = args[INTENSITY_ARG].as<float>() * 0.01F;
+    if (args[LENGTH_ARG].as<float>() == 0.0F)
     {
         length = 0.0F;
     }
     else
     {
-        length = PI / (args["length"].as<float>());
+        length = PI / (args[LENGTH_ARG].as<float>());
     }
 
-    reversed = args["reversed"].as<bool>();
+    reversed = args[REVERSED_ARG].as<bool>();
 
     if (!reversed)
     {
@@ -57,6 +57,16 @@ void WaveMode::update_args(const char *data)
     }
 
     args.garbageCollect();
+}
+
+void WaveMode::update_arg(String arg, String value)
+{
+    if (arg == SPEED_ARG)
+        speed = value.toFloat();
+    else if (arg == INTENSITY_ARG)
+        intensity = value.toFloat() * 0.01F;
+    else if (arg == COLOR_ARG)
+        color = toHex(value);
 }
 
 WaveMode::WaveMode()

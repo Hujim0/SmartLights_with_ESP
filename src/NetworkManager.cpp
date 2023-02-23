@@ -43,7 +43,7 @@ void NetworkManager::SentTextToAll(const char *data)
     webSocket.textAll(data);
 }
 
-void NetworkManager::Begin(const char *ssid, const char *password)
+bool NetworkManager::Begin(const char *ssid, const char *password)
 {
     Instance = this;
 
@@ -57,7 +57,7 @@ void NetworkManager::Begin(const char *ssid, const char *password)
     if (WiFi.waitForConnectResult(ATTEMPT_DURATION) != WL_CONNECTED)
     {
         // ESP.restart();
-        return;
+        return false;
     }
 
     // WiFi.config(ip, gateway, subnet);
@@ -82,6 +82,8 @@ void NetworkManager::Begin(const char *ssid, const char *password)
     Serial.print(HTTP_PORT);
     Serial.println("\"");
     Serial.println("------------------------------------------------------------------");
+
+    return true;
 }
 
 void NetworkManager::CheckStatus()
