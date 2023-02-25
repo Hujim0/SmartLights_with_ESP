@@ -16,19 +16,48 @@ static void onNewEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, Aws
 void NetworkManager::handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
 {
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
-    if (!info->final || info->index != 0 || info->len != len || info->opcode != WS_TEXT) // check that its a valid arg
-    {
+    if (info->opcode != WS_TEXT)
         return;
-    }
+
     data[len] = 0;
 
-    Serial.print("[Websocket] Got: \"");
+    if (info->len == len)
+    {
+        Serial.print("[Websocket] Got: \"");
+        Serial.print((char *)data);
+        Serial.println("\" --endln");
+
+        if (onNewClientHandler != NULL)
+        {
+            onNewMessageHandler((String)(char *)data);
+        }
+        return;
+    }
+
+    buffer_size += len;
+    buffer += (char *)data;
+
+    Serial.print("[Websocket] Partial message: ");
+    Serial.print(buffer_size);
+    Serial.print(" / ");
+    Serial.print(info->len);
+    Serial.print(" \"");
     Serial.print((char *)data);
     Serial.println("\" --endln");
 
-    if (onNewClientHandler != NULL)
+    if ((int)info->len == buffer_size)
     {
-        onNewMessageHandler((String)(char *)data);
+        Serial.print("[Websocket] Got: \"");
+        Serial.print(buffer);
+        Serial.println("\" --endln");
+
+        buffer_size = (uint64_t)0;
+
+        if (onNewClientHandler != NULL)
+        {
+            onNewMessageHandler(buffer);
+        }
+        buffer = "";
     }
 }
 

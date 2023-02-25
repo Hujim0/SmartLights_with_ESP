@@ -24,7 +24,8 @@ void SkyMode::update(CRGB *leds)
     if (millis() < sunrise_start_time)
         return;
 
-    float SecondsSinceSunriseStart = (float)(millis() - sunrise_start_time) / (10.0F * ((50 - speed) * 4));
+    SecondsSinceSunriseStart += (float)(millis() - last_time) / (1000.0F * (2.0F - speed));
+    last_time = millis();
 
     // initial sunrise ligtht
     if (SecondsSinceSunriseStart <= SECONDS_BEFORE_SKY_SHOWS)
@@ -59,6 +60,8 @@ SkyMode::SkyMode()
 }
 void SkyMode::update_args(const char *data)
 {
+    FastLED.clearData();
+
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> args;
     deserializeJson(args, data);
 
@@ -69,7 +72,7 @@ void SkyMode::update_args(const char *data)
     }
     sunrise_point = args[START_ARG].as<int>();
     sunset_point = args[END_ARG].as<int>();
-    speed = args[SPEED_ARG].as<int>();
+    speed = args[SPEED_ARG].as<float>();
 
     args.garbageCollect();
 
@@ -80,7 +83,7 @@ void SkyMode::update_arg(String arg, String value)
 {
     if (arg = SPEED_ARG)
     {
-        speed = value.toInt();
+        speed = value.toFloat();
     }
 }
 SkyMode::SkyMode(const char *data)

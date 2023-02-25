@@ -35,7 +35,7 @@ String GetPreferences()
 
 String GetModeArgs(int id)
 {
-    File file = LittleFS.open("/mode" + String(id) + ".json", "r");
+    File file = LittleFS.open("/modes/mode" + String(id) + ".json", "r");
     String data = file.readString();
     file.close();
     return data;
@@ -43,7 +43,15 @@ String GetModeArgs(int id)
 
 void SaveModeArgs(int id, String json)
 {
-    File file = LittleFS.open("/mode" + String(id) + ".json", "w");
+    File file = LittleFS.open("/modes/mode" + String(id) + ".json", "w");
     file.write(json.c_str());
     file.close();
+}
+
+String GetElements(int id)
+{
+    File file = LittleFS.open("/modes/elements/elements" + String(id) + ".json", "r");
+    String data = file.readString();
+    file.close();
+    return data;
 }

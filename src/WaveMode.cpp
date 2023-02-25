@@ -53,7 +53,7 @@ void WaveMode::update_args(const char *data)
 
     if (!reversed)
     {
-        speed = speed * -1.0F;
+        speed = abs(speed) * -1.0F;
     }
 
     args.garbageCollect();
@@ -62,7 +62,13 @@ void WaveMode::update_args(const char *data)
 void WaveMode::update_arg(String arg, String value)
 {
     if (arg == SPEED_ARG)
+    {
         speed = value.toFloat();
+        if (!reversed)
+        {
+            speed *= -1.0F;
+        }
+    }
     else if (arg == INTENSITY_ARG)
         intensity = value.toFloat() * 0.01F;
     else if (arg == COLOR_ARG)

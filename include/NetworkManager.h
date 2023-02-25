@@ -24,6 +24,9 @@ private:
     AsyncWebServer server = AsyncWebServer(HTTP_PORT);
     AsyncWebSocket webSocket = AsyncWebSocket("/ws");
 
+    String buffer;
+    uint64_t buffer_size;
+
 public:
     void handleWebSocketMessage(void *, uint8_t *, size_t);
 

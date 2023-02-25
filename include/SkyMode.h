@@ -9,9 +9,12 @@ private:
     bool edit_mode;
     int sunrise_point;
     int sunset_point;
-    int speed;
+    float speed;
 
     unsigned long sunrise_start_time;
+    unsigned long last_time = 0UL;
+
+    float SecondsSinceSunriseStart = 0.0F;
 
     void ShowEditMode(CRGB *);
     void ShowSunriseLight(float, CRGB *);

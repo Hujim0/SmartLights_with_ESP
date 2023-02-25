@@ -12,6 +12,7 @@ String GetPreferences();
 void SavePreferences(String);
 String GetModeArgs(int);
 void SaveModeArgs(int, String);
+String GetElements(int);
 void FSBegin();
 
 #endif

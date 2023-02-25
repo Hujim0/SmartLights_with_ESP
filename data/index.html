@@ -29,48 +29,35 @@
     </p>
     <div class="list">
         <style>
-            .list li {
+            .list dl {
+                padding: 5px;
+            }
+
+            .list dt {
                 padding: 7px;
+                margin: 0 10px 0 0;
+            }
+
+            .list dt::before {
+                content: "• ";
+            }
+
+            .list dd {
+                color: #808d9a;
+                font-style: italic;
+            }
+
+            .list label {
+                padding: 5px;
+                margin-right: 5px;
+            }
+
+            .list dd::before {
+                content: "- ";
             }
         </style>
-        <ul>
-            <li hidden>
-                <label>Edit</label>
-                <input type="checkbox" id="edit_input">
-            </li>
-            <li hidden>
-                <label>Speed</label>
-                <input type="range" id="speed_input" min="0" max="50">
-            </li>
-            <li hidden>
-                <label>count</label>
-                <input type="number" id="count_input">
-            </li>
-            <li hidden>
-                <label>Intensity</label>
-                <input type="range" id="intensity_input" min="0" max="100">
-            </li>
-            <li hidden>
-                <label>Length</label>
-                <input type="number" id="length_input">
-            </li>
-            <li hidden>
-                <label>Start</label>
-                <input type="number" id="start_input">
-            </li>
-            <li hidden>
-                <label>End</label>
-                <input type="number" id="end_input">
-            </li>
-            <li hidden>
-                <label>Reversed</label>
-                <input type="checkbox" id="reversed_input">
-            </li>
-            <li hidden>
-                <label>Color</label>
-                <input type="color" id="color_picker" />
-            </li>
-        </ul>
+        <dl id="list_element">
+        </dl>
     </div>
     <p></p>
     <p></p>
@@ -82,305 +69,236 @@
 <script type="text/javascript">
 
     var gateway = `ws://${window.location.host}/ws`;
-    var websocket;
+    var websocket = new WebSocket(gateway);
 
     window.addEventListener('load', BeginWebSocket);
 
-    function BeginWebSocket(event) {
-        console.log('Trying to open a WebSocket connection...');
-        websocket = new WebSocket(gateway);
+    function BeginWebSocket() {
         websocket.onopen = onOpen;
         websocket.onclose = onClose;
         websocket.onmessage = onMessage;
+        websocket.onerror = function (error) {
+            alert("Ws Error " + JSON.stringify(error));
+        };
     }
+
+    console.log('Trying to open a WebSocket connection...');
 
     function onOpen(event) {
         console.log('Connection opened');
     }
 
     function onClose(event) {
-        console.log('Connection closed');
         preferences = null;
         current_mode = null;
-        window.dispatchEvent(OnLostConnection);
+        console.log("Lost connection!")
+        lostConnection = true;
         location.reload();
-        setTimeout(BeginWebSocket, 2000);
-
     }
 
     var current_mode = null;
-    var preferences = null;
 
     var sentStreamEvent = false;
+    var lostConnection = true;
+    var gotPreferences = false;
 
-    const OnGetPreferences = new Event("onGetPreferences");
-    const OnGetMode = new Event("onGetMode");
-    const OnLostConnection = new Event("onLostConnection");
+    const ON_GET_MODE_EVENT = "onGetMode"
+    const ON_GET_PREFERENCES_EVENT = "onGetPreferences"
+    const OnGetMode = new Event(ON_GET_MODE_EVENT);
 
     function onMessage(event) {
-        if (preferences == null) {
-            preferences = JSON.parse(event.data);
-            window.dispatchEvent(OnGetPreferences);
+        if (!gotPreferences) {
+            lostConnection = false;
+            window.dispatchEvent(new CustomEvent(ON_GET_PREFERENCES_EVENT, { detail: JSON.parse(event.data) }));
+            gotPreferences = true;
             return;
         }
+
         console.log(event.data);
         current_mode = JSON.parse(event.data);
         window.dispatchEvent(OnGetMode);
     }
 
-    window.addEventListener("onGetPreferences", (event) => {
-        console.log("Got preferences!")
-    });
-    window.addEventListener("onLostConnection", (event) => {
-        console.log("Lost connection!")
-        preferences = null;
+    window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
+        console.log("Got preferences!");
+
+        console.log(JSON.stringify(event.detail));
+
     });
 
     function EndStream() {
+        if (lostConnection)
+            return;
         websocket.send("]");
         console.log("closing stream");
         sentStreamEvent = false;
     }
 
-    //---------------------------------------------------------------------------
-
-    var checkbox = document.getElementById("light_switch_checkbox");
-
-    window.addEventListener("onGetPreferences", (event) => {
-        checkbox.checked = preferences.light_switch;
-        checkbox.addEventListener("click", OnLightSwitchChanged);
-    });
-    window.addEventListener("onLostConnection", (event) => {
-        checkbox.removeEventListener("click", OnLightSwitchChanged);
-    });
-
-    function OnLightSwitchChanged() {
-        preferences.light_switch = checkbox.checked;
-
-        //json formatting
-        websocket.send("{\"event\":\"light_switch\"," +
-            "\"value\":" + checkbox.checked +
-            "}");
+    function SendJson(object) {
+        if (lostConnection)
+            return;
+        websocket.send(JSON.stringify(object));
     }
 
+    class espEvent {
+        event;
+        value;
+
+        constructor(event, value) {
+            this.event = event;
+            this.value = value;
+        }
+    }
+
+    const OPEN_STREAM = "open_stream";
+
+    const LIGHT_SWITCH = "light_switch";
+    const BRIGHTNESS = "brightness";
+    const MODE_SWITCH = "mode_switch";
+    const REQUEST_ARGS = "mode_args_request";
+
+
     //---------------------------------------------------------------------------
 
-    var brigthness_slider = document.getElementById("brightness_slider");
+    window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
+        var checkbox = document.getElementById("light_switch_checkbox");
 
-    window.addEventListener("onGetPreferences", (event) => {
+        checkbox.checked = event.detail[LIGHT_SWITCH];
+        checkbox.addEventListener("click", (checkbox_event) => { SendJson(new espEvent(LIGHT_SWITCH, checkbox_event.target.checked)) });
+    });
 
-        brigthness_slider.value = preferences.brightness;
+    //---------------------------------------------------------------------------
+
+    window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
+        var brigthness_slider = document.getElementById("brightness_slider");
+
+        brigthness_slider.value = event.detail.brightness;
 
         brigthness_slider.addEventListener("change", EndStream)
-        brigthness_slider.addEventListener("change", OnBrightnessUpdate);
+        brigthness_slider.addEventListener("change", (brigthness_slider_event) => { SendJson(new espEvent(BRIGHTNESS, brigthness_slider_event.target.value)) });
         brigthness_slider.addEventListener("input", handleBrigthnessInput);
     });
-
-    window.addEventListener("onLostConnection", (event) => {
-        brigthness_slider.removeEventListener("change", EndStream)
-        brigthness_slider.removeEventListener("change", OnBrightnessUpdate);
-        brigthness_slider.removeEventListener("input", handleBrigthnessInput);
-    });
-
-    function OnBrightnessUpdate() {
-        preferences.brightness = brigthness_slider.value;
-
-        websocket.send("{\"event\":\"brightness\"," +
-            "\"value\":" + brigthness_slider.value +
-            "}");
-    }
 
     function handleBrigthnessInput() {
         if (!sentStreamEvent) {
             console.log("starting slider event");
-            websocket.send("{\"event\":\"open_stream\"," +
-                "\"value\":\"brightness\"" +
-                "}");
+            SendJson(new espEvent(OPEN_STREAM, BRIGHTNESS));
             sentStreamEvent = true;
         }
-        console.log(brigthness_slider.value);
-        websocket.send(brigthness_slider.value);
-    }
-    //---------------------------------------------------------------------------
-    var color_picker = document.getElementById("color_picker");
-
-    window.addEventListener("onGetPreferences", (event) => {
-        color_picker.addEventListener("input", handleColorInput);
-        color_picker.addEventListener("change", EndStream)
-    });
-
-    window.addEventListener("onLostConnection", (event) => {
-        color_picker.removeEventListener("input", handleColorInput);
-        color_picker.removeEventListener("change", EndStream)
-    });
-
-    function handleColorInput() {
-        if (!sentStreamEvent) {
-            console.log("starting color event");
-            websocket.send("{\"event\":\"open_stream\"," +
-                "\"value\":\"color\"" +
-                "}");
-            sentStreamEvent = true;
-        }
-
-        websocket.send(color_picker.value);
+        console.log(event.target.value);
+        websocket.send(event.target.value);
     }
 
     //---------------------------------------------------------------------------
 
-    var speed_input = document.getElementById("speed_input");
-    var count_input = document.getElementById("count_input");
-    var intensity_input = document.getElementById("intensity_input");
-    var length_input = document.getElementById("length_input");
-    var reversed_input = document.getElementById("reversed_input");
-    var start_input = document.getElementById("start_input");
-    var end_input = document.getElementById("end_input");
+    window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
+        var select = document.getElementById("mode_switch_select");
 
-    inputs_dictionary = [
-        {
-            "elem": edit_input,
-            "property": "edit"
-        },
-        {
-            "elem": speed_input,
-            "property": "speed"
-        },
-        {
-            "elem": intensity_input,
-            "property": "intensity"
-        },
-        {
-            "elem": length_input,
-            "property": "length"
-        },
-        {
-            "elem": reversed_input,
-            "property": "reversed"
-        },
-        {
-            "elem": count_input,
-            "property": "count"
-        },
-        {
-            "elem": start_input,
-            "property": "start"
-        },
-        {
-            "elem": end_input,
-            "property": "end"
-        },
-        {
-            "elem": color_picker,
-            "property": "color"
-        }
-    ]
+        var mode_id = event.detail.mode;
 
-    // function OnSpeedInput() {
+        select.selectedIndex = mode_id;
+        SendRequestArgsEvent(mode_id);
 
-    //}
-
-    window.addEventListener("onGetPreferences", (event) => {
-        //color picker sends args only after updating the mode 
-        for (var i = 0; i < inputs_dictionary.length; i++) {
-            inputs_dictionary[i].elem.addEventListener("change", SendCurrentArgs);
-        }
-
-        //speed_input.addEventListener("input", OnSpeedInput)
-    });
-
-    window.addEventListener("onLostConnection", (event) => {
-        //color picker sends args only after updating the mode 
-        for (var i = 0; i < inputs_dictionary.length; i++) {
-            inputs_dictionary[i].elem.removeEventListener("change", SendCurrentArgs);
-        }
-    });
-
-
-    var select = document.getElementById("mode_switch_select");
-
-    window.addEventListener("onGetPreferences", (event) => {
-
-        select.selectedIndex = preferences.mode;
-        RequestArgs(preferences.mode);
-
-        select.addEventListener("change", (event) => {
-            ChangeMode(event.currentTarget.selectedIndex);
+        select.addEventListener("change", (select_event) => {
+            SendModeSwitchEvent(select_event.currentTarget.selectedIndex);
         });
     });
 
-    window.addEventListener("onLostConnection", (event) => (event) => {
-        select.removeEventListener("change", (event) => {
-            ChangeMode(event.currentTarget.selectedIndex);
-        });
-    });
+    //---------------------------------------------------------------------------
+
+    var list_element = document.getElementById("list_element");
 
     //send update func
-    function ChangeMode(id) {
-        preferences.mode = id;
+    function SendModeSwitchEvent(id) {
+        window.addEventListener(ON_GET_MODE_EVENT, OnGetArgs);
 
-        window.addEventListener("onGetMode", OnGetArgs);
-
-        websocket.send("{\"event\":\"mode_switch\"," +
-            "\"value\":" + preferences.mode +
-            "}");
+        SendJson(new espEvent(MODE_SWITCH, id));
     }
 
-    function RequestArgs(id) {
+    function SendRequestArgsEvent(id) {
 
-        window.addEventListener("onGetMode", OnGetArgs);
+        window.addEventListener(ON_GET_MODE_EVENT, OnGetArgs);
 
-        websocket.send("{\"event\":\"mode_args_request\"," +
-            "\"value\":" + preferences.mode +
-            "}");
+        SendJson(new espEvent(REQUEST_ARGS, id));
     }
 
     function OnGetArgs() {
-        UpdateModeElements();
-        window.removeEventListener("onGetMode", OnGetArgs);
+        CreateModeElements(current_mode.elems);
+
+        window.removeEventListener(ON_GET_MODE_EVENT, OnGetArgs);
     }
 
     function SendCurrentArgs() {
-        ApplyArgs();
-        websocket.send(JSON.stringify(current_mode));
+        console.log(JSON.stringify(current_mode));
+        SendJson(current_mode);
     }
 
-    function ApplyArgs() {
-        for (var i = 0; i < inputs_dictionary.length; i++) {
-            ApplyArg(inputs_dictionary[i].elem,
-                inputs_dictionary[i].property);
+    function CreateModeElements(_elements) {
+        list_element.innerHTML = "";
+
+        for (var i = 0; i < _elements.length; i++) {
+            var parent_element = document.createElement("dt");
+
+            var label_child = document.createElement("label");
+            label_child.innerText = _elements[i].name;
+            parent_element.appendChild(label_child);
+
+            //-------------------------------------------------------
+
+            var input_child = document.createElement("input");
+
+            for (var x = 0; x < _elements[i].input_props.length; x++) {
+
+                var attribute = _elements[i].input_props[x].split("=");
+
+                input_child[attribute[0]] = attribute[1];
+            }
+            input_child.mode_arg_name = _elements[i].arg_name;
+
+            var input_type_getter = "value";
+            if (input_child.type == "checkbox")
+                input_type_getter = "checked";
+
+            input_child.input_type_getter = input_type_getter;
+
+            //-------------------------------------------------------
+
+            input_child[input_type_getter] = current_mode[_elements[i].arg_name];
+
+            if (input_child.type == "color" || input_child.type == "range") {
+                input_child.addEventListener("input", (event) => {
+                    if (!sentStreamEvent) {
+                        console.log("starting stream event");
+
+                        SendJson(new espEvent(OPEN_STREAM, event.target.mode_arg_name));
+
+                        sentStreamEvent = true;
+                    }
+
+                    console.log(event.target.value);
+                    websocket.send(event.target.value);
+                });
+
+                input_child.addEventListener("change", EndStream);
+            }
+
+            //-------------------------------------------------------
+
+            input_child.addEventListener("change", (event) => {
+                current_mode[event.target.mode_arg_name] = event.target[event.target.input_type_getter];
+
+                SendCurrentArgs();
+            });
+
+            parent_element.appendChild(input_child);
+            list_element.appendChild(parent_element);
+
+            if (_elements[i].desc != null) {
+                var description_element = document.createElement("dd");
+                description_element.innerText = _elements[i].desc;
+                list_element.appendChild(description_element);
+            }
         }
-    }
-
-    function ApplyArg(elem, property) {
-        var hasProperty = current_mode[property] != null;
-
-        if (!hasProperty) return;
-
-        if (property == "reversed" || property == "edit") {
-            current_mode[property] = elem.checked;
-            return;
-        }
-
-        current_mode[property] = elem.value;
-    }
-
-    function UpdateModeElements() {
-        for (var i = 0; i < inputs_dictionary.length; i++) {
-            checkElement(inputs_dictionary[i].elem,
-                inputs_dictionary[i].property);
-        }
-    }
-
-    function checkElement(elem, property) {
-        var hasProperty = current_mode[property] != null;
-        elem.parentElement.hidden = !hasProperty;
-        if (!hasProperty) return;
-
-        if (property == "reversed" || property == "edit") {
-            elem.checked = current_mode[property];
-            return;
-        }
-        elem.value = current_mode[property];
     }
 
 </script>

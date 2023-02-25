@@ -2,7 +2,7 @@
 
 void RainbowMode::update(CRGB *leds)
 {
-    if (hue >= 255)
+    if (abs(hue) >= 255.0F)
         hue = 0;
 
     for (int i = 0; i < NUMPIXELS; i++)
@@ -10,26 +10,22 @@ void RainbowMode::update(CRGB *leds)
         leds[i] = CHSV(hue + (i * hueConst), 255, 255);
     }
 
-    if (hueConst != 0)
-    {
-        hue += ((speed * 0.1F) * std::abs(hueConst));
-        return;
-    }
-
     hue += (speed * 0.1F);
+
+    Serial.println(hue);
 }
 
 RainbowMode::RainbowMode()
 {
-    hue = 0;
-    speed = 10;
+    hue = 0.0F;
+    speed = 10.0F;
     count = 1;
     reversed = false;
 
-    hueConst = (255.0 * count) / (NUMPIXELS);
+    hueConst = (255.0F * count) / (float)(NUMPIXELS);
     if (!reversed) // should be the other way around but i like more when its reversed, so i will keep it a default
     {
-        hueConst *= -1;
+        speed *= -1;
     }
 }
 
@@ -42,10 +38,10 @@ void RainbowMode::update_args(const char *data)
     count = args[COUNT_ARG].as<int>();
     reversed = args[REVERSED_ARG].as<bool>();
 
-    hueConst = (255.0 * count) / (NUMPIXELS);
+    hueConst = (255.0F * count) / (float)(NUMPIXELS);
     if (!reversed)
     {
-        hueConst *= -1;
+        speed *= -1.0F;
     }
 
     args.garbageCollect();
@@ -55,6 +51,11 @@ void RainbowMode::update_arg(String arg, String value)
 {
     if (arg == SPEED_ARG)
         speed = value.toFloat();
+
+    if (!reversed)
+    {
+        speed *= -1.0F;
+    }
 }
 
 RainbowMode::RainbowMode(const char *data)
