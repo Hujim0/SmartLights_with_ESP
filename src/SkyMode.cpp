@@ -9,7 +9,7 @@ const unsigned long MILLIS_BEFORE_SUNRISE_START = 0;
 
 #define SECONDS_BEFORE_SUN_STARTS_TO_SHOW 20.0F
 #define SUN_RADIUS 5.0F
-#define SECONDS_BEFORE_SUN_FULLY_CAME_OUT 30.0F
+#define SECONDS_BEFORE_SUN_FULLY_CAME_OUT 20.0F
 
 const CRGB SUNRISE_SUN_COLOR = CRGB(255, 0, 0);
 
@@ -24,8 +24,7 @@ void SkyMode::update(CRGB *leds)
     if (millis() < sunrise_start_time)
         return;
 
-    SecondsSinceSunriseStart += (float)(millis() - last_time) / (1000.0F * (2.0F - speed));
-    last_time = millis();
+    SecondsSinceSunriseStart = (float)(millis() - sunrise_start_time) / (1000.0F * (2.0F - speed));
 
     // initial sunrise ligtht
     if (SecondsSinceSunriseStart <= SECONDS_BEFORE_SKY_SHOWS)
@@ -35,20 +34,11 @@ void SkyMode::update(CRGB *leds)
 
     if (SecondsSinceSunriseStart >= SECONDS_BEFORE_SUN_STARTS_TO_SHOW)
     {
-        const float DELAY = 20.0F;
+        const float DELAY = 0.0F;
 
-        if (SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW > DELAY && SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW < DELAY + 30.0F)
+        if (SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW > DELAY && SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW < DELAY + 60.0F)
         {
-            float phase = (SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW - DELAY);
-
-            SUN_COLOR = CHSV(phase * 1.3F, 255.0F - phase * 2.5F, 255);
-
-            SKY_COLOR = CHSV(skyHue + phase * 3.0F, 255.0F - phase * 6.0F, skyValue - phase * 0.2F);
-
-            for (int i = 0; i < NUMPIXELS; i++)
-            {
-                leds[i] = SKY_COLOR;
-            }
+            TiltColors(SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW - DELAY, leds);
         }
 
         ShowSunriseSun(SecondsSinceSunriseStart - SECONDS_BEFORE_SUN_STARTS_TO_SHOW, leds);
@@ -66,10 +56,8 @@ void SkyMode::update_args(const char *data)
     deserializeJson(args, data);
 
     edit_mode = args[EDIT_ARG].as<bool>();
-    if (edit_mode)
-    {
-        sunrise_start_time = millis() + MILLIS_BEFORE_SUNRISE_START;
-    }
+    sunrise_start_time = millis() + MILLIS_BEFORE_SUNRISE_START;
+    SecondsSinceSunriseStart = 0.0F;
     sunrise_point = args[START_ARG].as<int>();
     sunset_point = args[END_ARG].as<int>();
     speed = args[SPEED_ARG].as<float>();
@@ -90,7 +78,6 @@ SkyMode::SkyMode(const char *data)
 {
     Serial.print("sunrise start: ");
     Serial.println(sunrise_start_time);
-    sunrise_start_time = millis() + MILLIS_BEFORE_SUNRISE_START;
     update_args(data);
 }
 
@@ -135,7 +122,7 @@ void SkyMode::ShowSunriseSun(float SecondsSinceSunriseStart, CRGB *leds)
     if (phase >= 1.0F)
         phase = 1.0F;
 
-    float SunOffset = SecondsSinceSunriseStart * 0.15F;
+    float SunOffset = SecondsSinceSunriseStart * 0.075F;
 
     // for (int i = sunrise_point + floor(SunOffset); i < sunrise_point + SUN_RADIUS + 3 + floor(SunOffset); i++)
     for (int i = 0; i < NUMPIXELS; i++)
@@ -159,5 +146,33 @@ void SkyMode::ShowSunriseSun(float SecondsSinceSunriseStart, CRGB *leds)
                                           SUN_COLOR.b * multiplier);
 
         leds[i] = new_color;
+    }
+}
+
+void SkyMode::TiltColors(float SecondsSinceSunriseStart, CRGB *leds)
+{
+
+    float phase = (SecondsSinceSunriseStart)*0.125F;
+
+    const float phaseDelay = 2.5F;
+
+    if (phase >= phaseDelay)
+        SUN_COLOR = CHSV((phase - phaseDelay) * 6.0F, 255.0F - (phase - phaseDelay) * 8.0F, 255);
+
+    // SKY_COLOR = CHSV(skyHue + phase * 3.0F, 255.0F - phase * 9.5F, skyValue - phase * 1.75F);
+
+    // 16
+    // 3
+    // 0
+
+    SKY_COLOR = CRGB(removeNegatives((int)floorf(phase * 0.25F) - 2) + removeNegatives(15 - (int)floorf(phase * 1.5F)),
+                     2 + (int)floorf(phase * 1.4F),
+                     removeNegatives(((int)floorf(phase * 2.0F)) - 3));
+
+    printCRGB(SKY_COLOR);
+
+    for (int i = 0; i < NUMPIXELS; i++)
+    {
+        leds[i] = SKY_COLOR;
     }
 }

@@ -19,6 +19,7 @@ private:
     void ShowEditMode(CRGB *);
     void ShowSunriseLight(float, CRGB *);
     void ShowSunriseSun(float, CRGB *);
+    void TiltColors(float, CRGB *);
 
     CRGB SUN_COLOR;
     CRGB SKY_COLOR;

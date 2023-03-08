@@ -26,6 +26,9 @@ public:
     virtual void update_arg(String arg, String value) = 0;
 
     static uint32_t toHex(String);
+    static float removeNegatives(float);
+    static int removeNegatives(int);
+    static void printCRGB(CRGB);
     virtual ~Mode() {}
 };
 

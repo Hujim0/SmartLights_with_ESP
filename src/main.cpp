@@ -55,8 +55,6 @@ void setup()
     // preferences load
     Serial.println("[ESP] loading preferences...");
 
-    ChangeSettingsFromPreferences(GetPreferences());
-
 #ifdef DEBUG_PREFERENCES
     Serial.print("Loaded settings: ");
     Serial.println(preferences_json);
@@ -77,12 +75,15 @@ void setup()
     Serial.println("------------------------------------------------------------------");
 #endif
 
-    while (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
+    if (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
     {
+        ESP.reset();
     }
 
     network.OnNewClient(OnClientConnected);
     network.OnNewMessage(OnWebSocketMessage);
+
+    ChangeSettingsFromPreferences(GetPreferences());
 
     ledSetup();
 }
