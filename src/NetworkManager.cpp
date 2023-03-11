@@ -2,9 +2,9 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
-// const IPAddress ip(192, 168, 1, 17); // статический IP
-// const IPAddress gateway(192, 168, 1, 1);
-// const IPAddress subnet(255, 255, 255, 0);
+const IPAddress ip(192, 168, 0, 146); // статический IP
+const IPAddress gateway(192, 168, 0, 146);
+const IPAddress subnet(255, 255, 255, 0);
 
 // singleton initializer
 NetworkManager *NetworkManager::Instance = 0;
@@ -77,7 +77,17 @@ bool NetworkManager::Begin(const char *ssid, const char *password)
     Instance = this;
 
     // connection to wifi
+    WiFi.config(ip, gateway, subnet);
     WiFi.begin(ssid, password);
+
+#ifdef DEBUG_WIFI_SETTINGS
+    Serial.println("Wifi config:");
+    Serial.print("ssid: ");
+    Serial.println(ssid);
+    Serial.print("pass: ");
+    Serial.println(password);
+    Serial.println("------------------------------------------------------------------");
+#endif
 
     Serial.print("[ESP] Connecting to ");
     Serial.print(ssid);
@@ -88,8 +98,6 @@ bool NetworkManager::Begin(const char *ssid, const char *password)
         // ESP.restart();
         return false;
     }
-
-    // WiFi.config(ip, gateway, subnet);
 
     Serial.println("success");
     // server setup

@@ -14,6 +14,8 @@
 
 #define INDEX_HTML_PATH "/index.html"
 
+#define DEBUG_WIFI_SETTINGS
+
 typedef std::function<void(String)> OnNewMessageHandler;
 typedef std::function<void(int)> OnNewClientHandler;
 

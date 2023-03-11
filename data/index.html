@@ -102,9 +102,9 @@
     var lostConnection = true;
     var gotPreferences = false;
 
-    const ON_GET_MODE_EVENT = "onGetMode"
+    const ON_GET_ELEMENTS_EVENT = "onElementsMode"
     const ON_GET_PREFERENCES_EVENT = "onGetPreferences"
-    const OnGetMode = new Event(ON_GET_MODE_EVENT);
+    const OnGetElements = new Event(ON_GET_ELEMENTS_EVENT);
 
     function onMessage(event) {
         if (!gotPreferences) {
@@ -115,8 +115,13 @@
         }
 
         console.log(event.data);
-        current_mode = JSON.parse(event.data);
-        window.dispatchEvent(OnGetMode);
+        obj = JSON.parse(event.data);
+        if (obj.elems == null) {
+            current_mode = obj;
+            return;
+        }
+
+        window.dispatchEvent(new CustomEvent(ON_GET_ELEMENTS_EVENT, { detail: obj }));
     }
 
     window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
@@ -210,22 +215,22 @@
 
     //send update func
     function SendModeSwitchEvent(id) {
-        window.addEventListener(ON_GET_MODE_EVENT, OnGetArgs);
+        window.addEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
 
         SendJson(new espEvent(MODE_SWITCH, id));
     }
 
     function SendRequestArgsEvent(id) {
 
-        window.addEventListener(ON_GET_MODE_EVENT, OnGetArgs);
+        window.addEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
 
         SendJson(new espEvent(REQUEST_ARGS, id));
     }
 
     function OnGetArgs() {
-        CreateModeElements(current_mode.elems);
+        CreateModeElements(event.detail.elems);
 
-        window.removeEventListener(ON_GET_MODE_EVENT, OnGetArgs);
+        window.removeEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
     }
 
     function SendCurrentArgs() {

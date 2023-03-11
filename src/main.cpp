@@ -12,7 +12,6 @@
 
 // #define DEBUG_HEAP
 //  #define DEBUG_PREFERENCES
-#define DEBUG_WIFI
 
 #include <main.h>
 #include <ModeHandler.h>
@@ -66,15 +65,6 @@ void setup()
     String wifi_data[2];
     GetWifiSettings(wifi_data);
 
-#ifdef DEBUG_WIFI
-    Serial.println("Wifi config:");
-    Serial.print("ssid: ");
-    Serial.println(wifi_data[0].c_str());
-    Serial.print("pass: ");
-    Serial.println(wifi_data[1].c_str());
-    Serial.println("------------------------------------------------------------------");
-#endif
-
     if (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
     {
         ESP.reset();
@@ -104,8 +94,6 @@ void loop()
         network.CleanUp();
 
         network.CheckStatus();
-
-        ESP.resetHeap();
     }
 
     if (modeHandler.led_state)
@@ -166,6 +154,8 @@ void OnWebSocketMessage(String data)
         preferences["mode"] = mode_id;
         network.SentTextToAll(GetModeArgs(mode_id).c_str());
 
+        network.SentTextToAll(GetElements(mode_id).c_str());
+
         modeHandler.ChangeMode(mode_id, GetModeArgs(mode_id).c_str());
     }
     else if (doc["event"] == BRIGHTNESS)
@@ -184,6 +174,8 @@ void OnWebSocketMessage(String data)
     {
         int mode_id = doc["value"].as<int>();
         network.SentTextToAll(GetModeArgs(mode_id).c_str());
+
+        network.SentTextToAll(GetElements(mode_id).c_str());
     }
     else if (doc["event"] == STREAM_OPEN)
     {

@@ -11,8 +11,6 @@ void RainbowMode::update(CRGB *leds)
     }
 
     hue += (speed * 0.1F);
-
-    Serial.println(hue);
 }
 
 RainbowMode::RainbowMode()
