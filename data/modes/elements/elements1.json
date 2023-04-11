@@ -14,7 +14,8 @@
             "name": "Count",
             "arg_name": "count",
             "input_props": [
-                "type=number"
+                "type=number",
+                "min=0"
             ],
             "desc": "number of rainbows on a strip / put a zero if you want a strip to ligth with one color"
         },

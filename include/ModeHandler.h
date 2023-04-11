@@ -10,11 +10,14 @@
 #define ARGS_REQUEST "mode_args_request"
 #define STREAM_OPEN "open_stream"
 #define STREAM_CLOSE "close_stream"
+#define EPOCH_TIME "epoch_time"
 
 class ModeHandler
 {
 private:
     Mode *current_mode = NULL;
+
+    uint8_t last_brigthness = 0;
 
 public:
     int current_mode_id;

@@ -22,7 +22,8 @@
             "name": "Wave width",
             "arg_name": "length",
             "input_props": [
-                "type=number"
+                "type=number",
+                "min=0"
             ],
             "desc": "number of LED's that would be at full brigthness"
         },

@@ -17,6 +17,7 @@
 #include <ModeHandler.h>
 #include <NetworkManager.h>
 #include <FileSystem.h>
+#include <TimeManager.h>
 
 #include <ArduinoJson.h>
 
@@ -24,6 +25,7 @@ CRGB leds[NUMPIXELS];
 
 ModeHandler modeHandler;
 NetworkManager network = NetworkManager();
+TimeManager timeManager;
 #define INITIAL_DELAY 3000
 
 void OnClientConnected(int);
@@ -42,6 +44,52 @@ void ledSetup()
     FastLED.show();
 }
 
+void networkSetup()
+{
+    String wifi_data[2];
+    GetWifiSettings(wifi_data);
+
+    if (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
+    {
+        networkSetup();
+        return;
+    }
+
+    // global
+    network.AddWebPageHandler("/", [](AsyncWebServerRequest *request)
+                              { request->redirect("/home"); });
+    network.AddWebPageHandler("/data/web/side_menu.css", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/side_menu.css", "text/css")); });
+    network.AddWebPageHandler("/data/web/side_menu.js", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/side_menu.js", "text/javascript")); });
+    network.AddWebPageHandler("/data/web/styles_global.css", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/styles_global.css", "text/css")); });
+
+    // pages
+    network.AddWebPageHandler("/home", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/home/home.html", "text/html")); });
+    network.AddWebPageHandler("/data/web/home/home.css", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/home/home.css", "text/css")); });
+    network.AddWebPageHandler("/data/web/home/home.js", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/home/home.js", "text/javascript")); });
+    network.AddWebPageHandler("/schedule", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/schedule/schedule.html", "text/html")); });
+}
+
+// void AddWebResponce(const char *page_name, const char *file_path, const char *content_type)
+// {
+//     network.AddWebPageHandler(page_name, [](AsyncWebServerRequest *request)
+//                               { request->send(
+//                                     request->beginResponse(LittleFS, file_path, content_type)); });
+// }
+
 void setup()
 {
     delay(INITIAL_DELAY);
@@ -51,27 +99,12 @@ void setup()
 
     FSBegin();
 
-    // preferences load
-    Serial.println("[ESP] loading preferences...");
-
-#ifdef DEBUG_PREFERENCES
-    Serial.print("Loaded settings: ");
-    Serial.println(preferences_json);
-#endif
-
-    Serial.println("------------------------------------------------------------------");
-
     // network setup
-    String wifi_data[2];
-    GetWifiSettings(wifi_data);
-
-    if (!network.Begin(wifi_data[0].c_str(), wifi_data[1].c_str()))
-    {
-        ESP.reset();
-    }
-
     network.OnNewClient(OnClientConnected);
     network.OnNewMessage(OnWebSocketMessage);
+    network.OnConnectionLost(networkSetup);
+
+    networkSetup();
 
     ChangeSettingsFromPreferences(GetPreferences());
 
@@ -101,12 +134,12 @@ void loop()
         modeHandler.update(leds);
     }
     FastLED.show();
+
+    timeManager.Update();
 }
 
 void OnClientConnected(int id)
 {
-    String json;
-
     network.SentTextToClient(id, GetPreferences().c_str());
 }
 
@@ -143,6 +176,23 @@ void OnWebSocketMessage(String data)
         modeHandler.UpdateArgs(data.c_str());
 
         SaveModeArgs(modeHandler.current_mode_id, data);
+
+        return;
+    }
+
+    // for events that dont need preferences
+    if (doc["event"] == ARGS_REQUEST)
+    {
+        int mode_id = doc["value"].as<int>();
+        network.SentTextToAll(GetModeArgs(mode_id).c_str());
+
+        network.SentTextToAll(GetElements(mode_id).c_str());
+        return;
+    }
+    else if (doc["event"] == STREAM_OPEN)
+    {
+        current_stream = doc["value"].as<String>();
+        return;
     }
 
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
@@ -170,16 +220,9 @@ void OnWebSocketMessage(String data)
         modeHandler.LightSwitch(value);
         preferences[LIGHT_SWITCH] = value;
     }
-    else if (doc["event"] == ARGS_REQUEST)
+    else if (doc["event"] == EPOCH_TIME)
     {
-        int mode_id = doc["value"].as<int>();
-        network.SentTextToAll(GetModeArgs(mode_id).c_str());
-
-        network.SentTextToAll(GetElements(mode_id).c_str());
-    }
-    else if (doc["event"] == STREAM_OPEN)
-    {
-        current_stream = doc["value"].as<String>();
+        timeManager.Setup(doc["value"].as<uint16_t>(), doc["dayOfTheWeek"].as<int>());
     }
 
     String json;
@@ -188,13 +231,22 @@ void OnWebSocketMessage(String data)
 
     preferences.garbageCollect();
     doc.garbageCollect();
-    return;
 }
 
 void ChangeSettingsFromPreferences(String data)
 {
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
     deserializeJson(preferences, data);
+
+#ifdef DEBUG_PREFERENCES
+    Serial.println("[ESP] loading preferences...");
+
+    Serial.print("Loaded settings: ");
+    Serial.println(data);
+
+    Serial.println("------------------------------------------------------------------");
+
+#endif
 
     modeHandler.LightSwitch(preferences["light_switch"].as<bool>());
     FastLED.setBrightness(preferences["brightness"].as<int>());

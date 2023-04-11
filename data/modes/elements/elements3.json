@@ -12,7 +12,8 @@
             "name": "Sunrise point",
             "arg_name": "start",
             "input_props": [
-                "type=number"
+                "type=number",
+                "min=0"
             ],
             "desc": "the point at witch the sun will rise"
         },
@@ -20,7 +21,8 @@
             "name": "Sunset point",
             "arg_name": "end",
             "input_props": [
-                "type=number"
+                "type=number",
+                "min=0"
             ],
             "desc": "the point at witch the sun will set"
         },

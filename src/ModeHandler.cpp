@@ -13,11 +13,14 @@ void ModeHandler::LightSwitch(bool state)
 
     if (!state)
     {
-        FastLED.clear();
+        last_brigthness = FastLED.getBrightness();
+
         FastLED.clearData();
-        FastLED.show();
+        FastLED.setBrightness(0);
         return;
     }
+
+    FastLED.setBrightness(last_brigthness);
 }
 
 void ModeHandler::ChangeMode(int id, const char *args)

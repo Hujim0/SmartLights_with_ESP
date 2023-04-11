@@ -1,4 +1,4 @@
-me-no-dev/ESPAsyncTCP@^1.2.2
-bblanchon/ArduinoJson@^6.20.0
-fastled/FastLED@^3.5.0
 ottowinter/ESPAsyncWebServer-esphome@^3.0.0
+fastled/FastLED@^3.5.0
+bblanchon/ArduinoJson@^6.20.0
+me-no-dev/ESPAsyncTCP@^1.2.2

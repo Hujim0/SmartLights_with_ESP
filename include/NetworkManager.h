@@ -3,27 +3,23 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <stdlib.h>
-
 #include <ESPAsyncWebServer.h>
 #include <ESPAsyncTCP.h>
 
-#define HTTP_PORT 10200
+#define PORT 10200
 
 #define ATTEMPT_DURATION 30000
-
-#define INDEX_HTML_PATH "/index.html"
 
 #define DEBUG_WIFI_SETTINGS
 
 typedef std::function<void(String)> OnNewMessageHandler;
 typedef std::function<void(int)> OnNewClientHandler;
+typedef std::function<void()> OnConnectionLostHandler;
 
 class NetworkManager
 {
 private:
-    WiFiClient client = WiFiClient();
-    AsyncWebServer server = AsyncWebServer(HTTP_PORT);
+    AsyncWebServer server = AsyncWebServer(PORT);
     AsyncWebSocket webSocket = AsyncWebSocket("/ws");
 
     String buffer;
@@ -34,8 +30,13 @@ public:
 
     OnNewMessageHandler onNewMessageHandler;
     OnNewClientHandler onNewClientHandler;
+    OnConnectionLostHandler onConnectionLostHandler;
+
     void OnNewMessage(OnNewMessageHandler);
     void OnNewClient(OnNewClientHandler);
+    void OnConnectionLost(OnConnectionLostHandler);
+    void AddWebPageHandler(String uri, ArRequestHandlerFunction function);
+    void AddWebPageHandler(const char *uri, ArRequestHandlerFunction function);
     void CleanUp();
     void CheckStatus();
     void SentTextToClient(int, const char *);
