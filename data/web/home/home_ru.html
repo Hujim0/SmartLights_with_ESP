@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
@@ -23,62 +23,61 @@
     <div id="navbar">
         <i id="menu_cross" class="fa-solid fa-xmark"></i>
         <div>
-            <a href="home">Home</a>
-            <a href="schedule">Scheldule</a>
-            <a href="debug">Debug</a>
-            <a href="../changelang?lang=ru">Change to russian</a>
-            <a href="other">Other</a>
+            <a href="home">Дом</a>
+            <a href="schedule">Расписание</a>
+            <a href="debug">Отладка</a>
+            <a href="../changelang?lang=en">Английская версия</a>
+            <a href="other">Остальное</a>
             <hr />
-            <a href="https://github.com/Hujim0">Made by hujimo</a>
+            <a href="https://github.com/Hujim0">Сделано hujimo</a>
             <label>Licence - MIT</label>
         </div>
     </div>
-    <h1 class="centered">Home</h1>
+    <h1 class="centered">Дом</h1>
     <div class="main-holder">
 
 
         <label class="checkbox-container text">
-            Light switch
+            Переключатель
             <input type="checkbox" id="light_switch_checkbox" />
             <span class="checkmark"></span>
         </label>
-        <p><label class="text">Brightness</label><input type="range" id="brightness_slider" min="5" max="255"
-                value="5" />
+        <p><label class="text">Яркость</label><input type="range" id="brightness_slider" min="5" max="255" value="5" />
         </p>
         <div id="mode_list" class="modes-wrapper">
             <label id="mode-static">
                 <input type="radio" name="modes-radio" mode-id="0">
-                <div>Static mode</div>
+                <div>Статичный режим</div>
             </label>
             <label id="mode-rainbow">
                 <input type="radio" name="modes-radio" mode-id="1">
-                <div>Rainbow mode</div>
+                <div>Радужный режим</div>
             </label>
             <label id=" mode-wave">
                 <input type="radio" name="modes-radio" mode-id="2">
                 <div>
-                    Wave mode
+                    Волновой режим
                 </div>
             </label>
             <label id=" mode-sky">
                 <input type="radio" name="modes-radio" mode-id="3">
-                <div>Sky mode</div>
+                <div>Небесный режим</div>
             </label>
             <label id="mode-blank">
                 <input type="radio" name="modes-radio" mode-id="4">
-                <div>... mode</div>
+                <div>... режим</div>
             </label>
             <label id="mode-blank1">
                 <input type="radio" name="modes-radio" mode-id="5">
-                <div>... mode</div>
+                <div>... режим</div>
             </label>
             <label id="mode-blank2">
                 <input type="radio" name="modes-radio" mode-id="6">
-                <div>... mode</div>
+                <div>... режим</div>
             </label>
         </div>
 
-        <h1 class="centered">Mode settings</h1>
+        <h1 class="centered">Настройки режима</h1>
 
         <template id="skeleton-template">
             <div>
@@ -89,11 +88,11 @@
         <template id="list-template">
             <div>
                 <label>
-                    Parameter
+                    Параметр
                 </label>
                 <input type="number" />
                 <label class="info-button">
-                    Info
+                    Инфо
                     <input type="checkbox"></input>
                     <i class="fas fa-circle-info"></i>
                 </label>

@@ -65,7 +65,7 @@ h1 {
     background-color: var(--background);
     display: block;
     min-height: calc(120vh);
-    min-width: calc(93vw);
+    min-width: calc(95vw);
     border-radius: 70px;
     transform: translateX(-6px);
     border: 4px solid var(--ink-1);

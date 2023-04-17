@@ -67,7 +67,7 @@ void TimeManager::UpdateSeconds()
 
     // time events (second update)
 
-    Serial.println(GetFormattedTime());
+    // Serial.println(GetFormattedTime());
 }
 
 String TimeManager::GetFormattedTime()

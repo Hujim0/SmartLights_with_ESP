@@ -7,6 +7,9 @@
 #define STRIP_PIN D4
 #define COLOR_ORDER GRB
 
-
+void OnClientConnected(int);
+void OnWebSocketMessage(String);
+void LoadFromPreferences(String);
+void ChangeLanguage(String);
 
 #endif

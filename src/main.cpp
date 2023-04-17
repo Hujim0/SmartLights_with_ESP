@@ -26,11 +26,8 @@ CRGB leds[NUMPIXELS];
 ModeHandler modeHandler;
 NetworkManager network = NetworkManager();
 TimeManager timeManager;
-#define INITIAL_DELAY 3000
-
-void OnClientConnected(int);
-void OnWebSocketMessage(String);
-void ChangeSettingsFromPreferences(String data);
+String lang = "en";
+#define INITIAL_DELAY 1500
 
 void ledSetup()
 {
@@ -46,6 +43,10 @@ void ledSetup()
 
 void networkSetup()
 {
+    network.OnNewClient(OnClientConnected);
+    network.OnNewMessage(OnWebSocketMessage);
+    network.OnConnectionLost(networkSetup);
+
     String wifi_data[2];
     GetWifiSettings(wifi_data);
 
@@ -55,32 +56,73 @@ void networkSetup()
         return;
     }
 
+    network.ServeStatic("/data", LittleFS, "/", "max-age=600");
+
     // global
+    network.AddWebPageHandler("http://local_lumify/", [](AsyncWebServerRequest *request)
+                              { request->redirect(network.getUrl() + lang + "/home"); });
+
     network.AddWebPageHandler("/", [](AsyncWebServerRequest *request)
-                              { request->redirect("/home"); });
-    network.AddWebPageHandler("/data/web/side_menu.css", [](AsyncWebServerRequest *request)
+                              { request->redirect("/" + lang + "/home"); });
+
+    network.AddWebPageHandler("/mode", [](AsyncWebServerRequest *request)
+                              {
+                                int id = request->arg("id").toInt();
+
+                                String args = GetModeArgs(id);
+
+                                if (!request->hasArg("request"))
+                                {
+                                    __try
+                                    {
+                                      modeHandler.ChangeMode(id, args.c_str());
+
+                                      SaveModeArgs(id, args);
+                                    }
+                                    __catch (const std::exception& ex) {
+                                        Serial.println("[error]" + String(ex.what()));
+                                        request->send(404);
+                                        return;
+                                    }
+                                    String json = GetPreferences();
+                                    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+                                    deserializeJson(preferences, json);
+                                    preferences["mode"] = id;
+                                    String json_save;
+                                    serializeJsonPretty(preferences, json_save);
+                                    SavePreferences(json_save);
+                                    preferences.garbageCollect();
+                                } 
+
+                                request->send(
+                                    request->beginResponse(HTTP_POST, "text/json", args)); });
+
+    network.AddWebPageHandler("/elements", [](AsyncWebServerRequest *request)
                               { request->send(
-                                    request->beginResponse(LittleFS, "web/side_menu.css", "text/css")); });
-    network.AddWebPageHandler("/data/web/side_menu.js", [](AsyncWebServerRequest *request)
-                              { request->send(
-                                    request->beginResponse(LittleFS, "web/side_menu.js", "text/javascript")); });
-    network.AddWebPageHandler("/data/web/styles_global.css", [](AsyncWebServerRequest *request)
-                              { request->send(
-                                    request->beginResponse(LittleFS, "web/styles_global.css", "text/css")); });
+                                    request->beginResponse(LittleFS, "modes/elements/" + lang + "/elements" + request->arg("id") + ".json", "text/json")); });
+
+    network.AddWebPageHandler("/changelang", [](AsyncWebServerRequest *request)
+                              {
+        ChangeLanguage(request->arg("lang"));
+        request->redirect("/" + request->arg("lang") + "/home"); });
+
+    //====================================================
 
     // pages
-    network.AddWebPageHandler("/home", [](AsyncWebServerRequest *request)
+    network.AddWebPageHandler("/en/home", [](AsyncWebServerRequest *request)
                               { request->send(
                                     request->beginResponse(LittleFS, "web/home/home.html", "text/html")); });
-    network.AddWebPageHandler("/data/web/home/home.css", [](AsyncWebServerRequest *request)
+    network.AddWebPageHandler("/ru/home", [](AsyncWebServerRequest *request)
                               { request->send(
-                                    request->beginResponse(LittleFS, "web/home/home.css", "text/css")); });
-    network.AddWebPageHandler("/data/web/home/home.js", [](AsyncWebServerRequest *request)
-                              { request->send(
-                                    request->beginResponse(LittleFS, "web/home/home.js", "text/javascript")); });
-    network.AddWebPageHandler("/schedule", [](AsyncWebServerRequest *request)
+                                    request->beginResponse(LittleFS, "web/home/home_ru.html", "text/html")); });
+
+    //------------------------------------------------------
+    network.AddWebPageHandler("/en/schedule", [](AsyncWebServerRequest *request)
                               { request->send(
                                     request->beginResponse(LittleFS, "web/schedule/schedule.html", "text/html")); });
+    network.AddWebPageHandler("/ru/schedule", [](AsyncWebServerRequest *request)
+                              { request->send(
+                                    request->beginResponse(LittleFS, "web/schedule/schedule_ru.html", "text/html")); });
 }
 
 // void AddWebResponce(const char *page_name, const char *file_path, const char *content_type)
@@ -89,6 +131,23 @@ void networkSetup()
 //                               { request->send(
 //                                     request->beginResponse(LittleFS, file_path, content_type)); });
 // }
+void ChangeLanguage(String _lang)
+{
+    lang = _lang;
+
+    String json = GetPreferences();
+
+    StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
+    deserializeJson(preferences, json);
+
+    preferences["lang"] = _lang;
+
+    String json_save;
+    serializeJsonPretty(preferences, json_save);
+    SavePreferences(json_save);
+
+    preferences.garbageCollect();
+}
 
 void setup()
 {
@@ -99,16 +158,15 @@ void setup()
 
     FSBegin();
 
-    // network setup
-    network.OnNewClient(OnClientConnected);
-    network.OnNewMessage(OnWebSocketMessage);
-    network.OnConnectionLost(networkSetup);
+    LoadFromPreferences(GetPreferences());
 
     networkSetup();
 
-    ChangeSettingsFromPreferences(GetPreferences());
-
     ledSetup();
+
+    modeHandler.ChangeMode(
+        modeHandler.current_mode_id,
+        GetModeArgs(modeHandler.current_mode_id).c_str());
 }
 
 unsigned long timer = millis();
@@ -233,7 +291,7 @@ void OnWebSocketMessage(String data)
     doc.garbageCollect();
 }
 
-void ChangeSettingsFromPreferences(String data)
+void LoadFromPreferences(String data)
 {
     StaticJsonDocument<STATIC_DOCUMENT_MEMORY_SIZE> preferences;
     deserializeJson(preferences, data);
@@ -251,10 +309,7 @@ void ChangeSettingsFromPreferences(String data)
     modeHandler.LightSwitch(preferences["light_switch"].as<bool>());
     FastLED.setBrightness(preferences["brightness"].as<int>());
 
-    int mode_id = preferences["mode"].as<int>();
+    modeHandler.current_mode_id = preferences["mode"].as<int>();
 
     preferences.garbageCollect();
-
-    modeHandler.ChangeMode(
-        mode_id, GetModeArgs(mode_id).c_str());
 }

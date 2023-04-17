@@ -25,6 +25,8 @@ private:
     String buffer;
     uint64_t buffer_size;
 
+    String url;
+
 public:
     void handleWebSocketMessage(void *, uint8_t *, size_t);
 
@@ -35,14 +37,17 @@ public:
     void OnNewMessage(OnNewMessageHandler);
     void OnNewClient(OnNewClientHandler);
     void OnConnectionLost(OnConnectionLostHandler);
-    void AddWebPageHandler(String uri, ArRequestHandlerFunction function);
-    void AddWebPageHandler(const char *uri, ArRequestHandlerFunction function);
-    void CleanUp();
-    void CheckStatus();
     void SentTextToClient(int, const char *);
     void SentTextToAll(const char *);
+    void CleanUp();
+
+    void AddWebPageHandler(String uri, ArRequestHandlerFunction function);
+    void AddWebPageHandler(const char *uri, ArRequestHandlerFunction function);
+    void ServeStatic(const char *uri, fs::FS &fs, const char *path, const char *cache_contol = (const char *)__null);
+    void CheckStatus();
 
     static NetworkManager *Instance;
+    String getUrl();
 
     bool Begin(const char *, const char *);
 };

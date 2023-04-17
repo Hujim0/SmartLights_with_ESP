@@ -108,10 +108,8 @@ bool NetworkManager::Begin(const char *ssid, const char *password)
 
 #ifdef DEBUG_WIFI_SETTINGS
     Serial.println("Wifi config:");
-    Serial.print("ssid: ");
-    Serial.println(ssid);
-    Serial.print("pass: ");
-    Serial.println(password);
+    Serial.println("ssid: " + String(ssid));
+    Serial.println("pass: " + String(password));
     Serial.println("------------------------------------------------------------------");
 #endif
 
@@ -134,11 +132,9 @@ bool NetworkManager::Begin(const char *ssid, const char *password)
     webSocket.onEvent(onNewEvent);
     webSocket.closeAll();
     // print server url
-    Serial.print("[ESP] HTTP server started at \"http://");
-    Serial.print(WiFi.localIP());
-    Serial.print(":");
-    Serial.print(PORT);
-    Serial.println("\"");
+    url = "http://" + WiFi.localIP().toString() + ":" + String(PORT);
+
+    Serial.println("[ESP] HTTP server started at \"" + url + "\"");
     Serial.println("------------------------------------------------------------------");
 
     return true;
@@ -159,9 +155,7 @@ void NetworkManager::CheckStatus()
     if (status == WL_CONNECTION_LOST || status == WL_DISCONNECTED)
     {
         if (onConnectionLostHandler != NULL)
-        {
             onConnectionLostHandler();
-        }
     }
 }
 
@@ -182,4 +176,14 @@ void NetworkManager::OnConnectionLost(OnConnectionLostHandler handler)
 void NetworkManager::CleanUp()
 {
     webSocket.cleanupClients();
+}
+
+void NetworkManager::ServeStatic(const char *uri, fs::FS &fs, const char *path, const char *cache_contol)
+{
+    server.serveStatic(uri, fs, path, cache_contol);
+}
+
+String NetworkManager::getUrl()
+{
+    return url;
 }

@@ -59,19 +59,15 @@ function onMessage(event) {
         return;
     }
 
-    obj = JSON.parse(event.data);
+    // obj = JSON.parse(event.data);
 
-    if (obj.elems == null) {
-        current_mode = obj;
-        console.log("[WS] - got args");
-        return;
-    }
+    // if (obj.elems == null) {
+    //     current_mode = obj;
+    //     console.log("[WS] - got args");
+    //     return;
+    // }
 
-    console.log("[WS] - got elements");
-
-    window.dispatchEvent(new CustomEvent(ON_GET_ELEMENTS_EVENT, {
-        detail: obj
-    }));
+    // console.log("[WS] - got elements");
 }
 
 function EndStream() {
@@ -121,7 +117,8 @@ window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
 var modes = document.getElementById("mode_list").children;
 for (var i = 0; i < modes.length; i++) {
     modes[i].addEventListener("input", (event) => {
-        SendModeSwitchEvent(event.target.getAttribute("mode-id"));
+        RequestMode(event.target.getAttribute("mode-id"), false);
+        CreateSkeleton();
     });
 }
 
@@ -130,7 +127,7 @@ window.addEventListener(ON_GET_PREFERENCES_EVENT, (event) => {
     var mode_id = event.detail.mode;
 
     modes[mode_id].children[0].checked = true;
-    SendRequestArgsEvent(mode_id);
+    RequestMode(mode_id, true);
 });
 
 //---------------------------------------------------------------------------
@@ -165,26 +162,35 @@ function handleBrigthnessInput() {
 var list_container = document.getElementById("list-containter");
 var list_temlate = document.getElementById("list-template");
 var skeleton_template = document.getElementById("skeleton-template");
-//send update func
-function SendModeSwitchEvent(id) {
-    window.addEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
-    CreateSkeleton();
 
-    SendJson(new espEvent(MODE_SWITCH, id));
-}
+function RequestMode(id, RequestMode) {
+    // SendJson(new espEvent(REQUEST_ARGS, id));
 
-function SendRequestArgsEvent(id) {
+    const xhr_args = new XMLHttpRequest();
 
-    window.addEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
-    CreateSkeleton();
+    var get_string = "/mode?id=" + id;
 
-    SendJson(new espEvent(REQUEST_ARGS, id));
-}
+    if (RequestMode) {
+        get_string += "&request=true";
+    }
 
-function OnGetArgs() {
-    CreateModeElements(event.detail.elems);
+    xhr_args.open("GET", get_string, true);
 
-    window.removeEventListener(ON_GET_ELEMENTS_EVENT, OnGetArgs);
+    xhr_args.onload = () => {
+        current_mode = JSON.parse(xhr_args.responseText);
+        console.log(xhr_args.responseText)
+    }
+    xhr_args.send();
+
+    const xhr_elems = new XMLHttpRequest();
+
+    xhr_elems.open("GET", "/elements?id=" + id, true);
+
+    xhr_elems.onload = () => {
+        CreateModeElements(JSON.parse(xhr_elems.responseText)["elems"]);
+        console.log(xhr_elems.responseText);
+    }
+    xhr_elems.send();
 }
 
 function SendCurrentArgs() {
@@ -192,14 +198,21 @@ function SendCurrentArgs() {
     SendJson(current_mode);
 }
 
+var current_info_inputs = [];
+
 function CreateSkeleton() {
     list_container.innerHTML = "";
-    for (let i = 0; i < 2; i++) {
+    var count = current_info_inputs.length;
+    if (count == 0 || count == null) {
+        count = 2
+    }
+
+    for (let i = 0; i < count; i++) {
         list_container.appendChild(skeleton_template.content.cloneNode(true));
     }
 }
+CreateSkeleton();
 
-var current_info_inputs = [];
 
 function CreateModeElements(_elements) {
     list_container.innerHTML = "";
