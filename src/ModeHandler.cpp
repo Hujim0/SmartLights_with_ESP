@@ -92,6 +92,11 @@ void ModeHandler::PushArg(String arg, String value)
         current_mode->update_arg(arg, value);
 }
 
+void ModeHandler::ChangeBrightness(int value)
+{
+    FastLED.setBrightness(value);
+}
+
 ModeHandler::ModeHandler()
 {
 }

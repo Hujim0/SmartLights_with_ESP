@@ -11,5 +11,9 @@ void OnClientConnected(int);
 void OnWebSocketMessage(String);
 void LoadFromPreferences(String);
 void ChangeLanguage(String);
+void ledSetup();
+void fiveSecondTimer();
+void networkSetup();
+void LoadTimeEvents();
 
 #endif

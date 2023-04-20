@@ -35,7 +35,15 @@ String GetPreferences()
 
 String GetModeArgs(int id)
 {
-    File file = LittleFS.open("/modes/mode" + String(id) + ".json", "r");
+    String path = "/modes/mode" + String(id) + ".json";
+
+    if (!LittleFS.exists(path))
+    {
+        throw std::invalid_argument("File not found");
+        return "";
+    }
+
+    File file = LittleFS.open(path, "r");
     String data = file.readString();
     file.close();
     return data;
@@ -51,6 +59,14 @@ void SaveModeArgs(int id, String json)
 String GetElements(int id)
 {
     File file = LittleFS.open("/modes/elements/elements" + String(id) + ".json", "r");
+    String data = file.readString();
+    file.close();
+    return data;
+}
+
+String GetTimeEvents()
+{
+    File file = LittleFS.open("/time_events.json", "r");
     String data = file.readString();
     file.close();
     return data;

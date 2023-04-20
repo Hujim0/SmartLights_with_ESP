@@ -28,6 +28,7 @@ static void onNewEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, Aws
         Serial.print("websocket client #");
         Serial.print(client->id());
         Serial.print(" disconnected");
+        NetworkManager::Instance->CleanUp();
         break;
     case WS_EVT_DATA:
         NetworkManager::Instance->handleWebSocketMessage(arg, data, len);
@@ -147,6 +148,11 @@ void NetworkManager::AddWebPageHandler(String uri, ArRequestHandlerFunction func
 void NetworkManager::AddWebPageHandler(const char *uri, ArRequestHandlerFunction func)
 {
     server.on(uri, HTTP_GET, func);
+}
+
+void NetworkManager::AddWebPageGetter(const char *uri, ArRequestHandlerFunction func)
+{
+    server.on(uri, HTTP_POST, func);
 }
 
 void NetworkManager::CheckStatus()

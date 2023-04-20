@@ -23,6 +23,7 @@ public:
     int current_mode_id;
     bool led_state = true;
     void LightSwitch(bool);
+    void ChangeBrightness(int);
     void ChangeMode(int, const char *);
     void ChangeMode(int);
     void UpdateArgs(const char *);

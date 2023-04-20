@@ -14,5 +14,7 @@ String GetModeArgs(int);
 void SaveModeArgs(int, String);
 String GetElements(int);
 void FSBegin();
+String GetTimeEvents();
+// void Save
 
 #endif

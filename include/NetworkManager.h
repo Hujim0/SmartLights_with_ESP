@@ -43,6 +43,7 @@ public:
 
     void AddWebPageHandler(String uri, ArRequestHandlerFunction function);
     void AddWebPageHandler(const char *uri, ArRequestHandlerFunction function);
+    void AddWebPageGetter(const char *uri, ArRequestHandlerFunction function);
     void ServeStatic(const char *uri, fs::FS &fs, const char *path, const char *cache_contol = (const char *)__null);
     void CheckStatus();
 

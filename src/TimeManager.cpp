@@ -1,18 +1,24 @@
 #include <TimeManager.h>
+#include <TimeEvent.h>
 
 TimeManager *TimeManager::Instance = 0;
 
-void TimeManager::Setup(uint16_t epoch_time_seconds, int _dayOfTheWeek)
+void TimeManager::Setup(ModeHandler *handler, int epoch_time_seconds, int _dayOfTheWeek)
 {
+    if (isSetuped)
+        return;
+
     Instance = this;
+
+    modeHandler = handler;
 
     dayOfTheWeek = _dayOfTheWeek;
 
-    MillisOffset = (unsigned long)(epoch_time_seconds * (unsigned short)1000) - millis();
+    MillisOffset = (unsigned long)(epoch_time_seconds * 1000) - millis();
 
-    _hours = (epoch_time_seconds / (unsigned short)3600);
-    _minuts = (epoch_time_seconds % (unsigned short)3600) / (unsigned short)60;
-    _seconds = epoch_time_seconds % (unsigned short)60;
+    _hours = (epoch_time_seconds / 3600);
+    _minuts = (epoch_time_seconds % 3600) / 60;
+    _seconds = epoch_time_seconds % 60;
 
     isSetuped = true;
 }
@@ -22,14 +28,14 @@ void TimeManager::Update()
     if (!isSetuped)
         return;
 
-    epoch_time_day_seconds = (unsigned short)(((MillisOffset + millis()) / 1000UL) % 86400UL);
+    epoch_time_day_seconds = (int)(((MillisOffset + millis()) / 1000UL) % 86400UL);
 
     UpdateSeconds();
 }
 
 void TimeManager::UpdateHours()
 {
-    int timeHours = (int)((epoch_time_day_seconds / (unsigned short)3600));
+    int timeHours = (epoch_time_day_seconds / 3600);
 
     if (_hours == timeHours)
         return;
@@ -42,7 +48,7 @@ void TimeManager::UpdateHours()
 
 void TimeManager::UpdateMinuts()
 {
-    int timeMins = (int)((epoch_time_day_seconds % (unsigned short)3600) / (unsigned short)60);
+    int timeMins = (epoch_time_day_seconds % 3600) / 60;
 
     if (_minuts == timeMins)
         return;
@@ -52,11 +58,23 @@ void TimeManager::UpdateMinuts()
     UpdateHours();
 
     // time events (minute update)
+
+    for (int i = 0; i < timeEvents.size(); i++)
+    {
+        bool result = timeEvents[i].CheckTime(modeHandler, epoch_time_day_seconds /*, dayOfTheWeek*/);
+
+        Serial.println(result);
+
+        if (result)
+        {
+            Serial.println(String("--[" + GetFormattedTime() + "]: " + timeEvents[i].stringify()));
+        }
+    }
 }
 
 void TimeManager::UpdateSeconds()
 {
-    int timeSecs = (int)(epoch_time_day_seconds % (unsigned short)60);
+    int timeSecs = epoch_time_day_seconds % 60;
 
     if (timeSecs == _seconds)
         return;
@@ -67,7 +85,19 @@ void TimeManager::UpdateSeconds()
 
     // time events (second update)
 
-    // Serial.println(GetFormattedTime());
+    FiveSecondCounter++;
+
+    if (FiveSecondCounter == 5)
+    {
+        FiveSecondCounter = 0;
+
+        if (timer != NULL)
+        {
+            timer();
+        }
+    }
+
+    Serial.println(String(epoch_time_day_seconds) + " " + GetFormattedTime());
 }
 
 String TimeManager::GetFormattedTime()
@@ -91,3 +121,36 @@ String TimeManager::GetFormattedTime()
 }
 
 TimeManager::TimeManager() {}
+
+void TimeManager::AddTimeEvent(TimeEvent event)
+{
+    timeEvents.add(event);
+
+    Serial.println("--Added " + event.stringify());
+}
+
+void TimeManager::RemoveTimeEvent(int epoch_time, int event_type)
+{
+    int delete_index = -1;
+
+    for (int i = 0; i < timeEvents.size(); i++)
+    {
+        if (timeEvents[i].Equals(epoch_time, event_type))
+        {
+            delete_index = i;
+        }
+    }
+
+    if (delete_index == -1)
+    {
+        Serial.println("--Event not found: " + String(epoch_time) + " type: " + String(event_type));
+        return;
+    }
+
+    timeEvents.remove(delete_index);
+}
+
+void TimeManager::RemoveLastTimeEvent()
+{
+    timeEvents.remove(timeEvents.size() - 1);
+}
