@@ -68,6 +68,8 @@
     /* justify-self: flex-start; */
     margin-left: 2rem;
     /* margin-bottom: 3px; */
+    height: 3rem;
+    min-height: 3rem;
 }
 
 .timelist-element i {

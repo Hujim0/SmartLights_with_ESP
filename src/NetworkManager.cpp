@@ -103,7 +103,7 @@ bool NetworkManager::Begin(const char *ssid, const char *password)
     Instance = this;
 
     // connection to wifi
-    WiFi.config(ip, gateway, subnet);
+    // WiFi.config(ip, gateway, subnet);
     WiFi.begin(ssid, password);
     WiFi.setAutoReconnect(true);
 

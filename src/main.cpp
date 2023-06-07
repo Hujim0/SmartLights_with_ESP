@@ -278,6 +278,7 @@ void ledSetup()
 
     FastLED.addLeds<STRIP, STRIP_PIN, COLOR_ORDER>(leds, NUMPIXELS).setCorrection(TypicalLEDStrip);
     FastLED.setMaxRefreshRate(60);
+    FastLED.setMaxPowerInVoltsAndMilliamps((uint8_t)5, (uint32_t)(60 * NUMPIXELS));
 
     FastLED.clearData();
     FastLED.clear();
